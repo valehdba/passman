@@ -1,4 +1,5 @@
 """Tests for the vault router — including isolation between users."""
+
 from __future__ import annotations
 
 import pytest
@@ -9,9 +10,7 @@ from .conftest import make_register_payload, make_vault_payload
 async def _login(client, email: str = "vault@example.com"):  # type: ignore[no-untyped-def]
     reg = make_register_payload(email)
     await client.post("/api/accounts/register", json=reg)
-    resp = await client.post(
-        "/api/sessions", json={"email": email, "auth_key": reg["auth_key"]}
-    )
+    resp = await client.post("/api/sessions", json={"email": email, "auth_key": reg["auth_key"]})
     return resp.json()
 
 
@@ -24,9 +23,7 @@ async def test_create_then_list_item(client) -> None:  # type: ignore[no-untyped
     body = await _login(client)
     headers = _auth_headers(body)
 
-    create = await client.post(
-        "/api/vault/items", json=make_vault_payload(), headers=headers
-    )
+    create = await client.post("/api/vault/items", json=make_vault_payload(), headers=headers)
     assert create.status_code == 201
     item_id = create.json()["id"]
 
@@ -42,9 +39,7 @@ async def test_get_update_delete_item(client) -> None:  # type: ignore[no-untype
     body = await _login(client)
     headers = _auth_headers(body)
     item_id = (
-        await client.post(
-            "/api/vault/items", json=make_vault_payload(), headers=headers
-        )
+        await client.post("/api/vault/items", json=make_vault_payload(), headers=headers)
     ).json()["id"]
 
     g = await client.get(f"/api/vault/items/{item_id}", headers=headers)
@@ -83,15 +78,11 @@ async def test_users_cannot_see_each_others_items(client) -> None:  # type: igno
     assert b_listing.json()["items"] == []
 
     # Bob should not be able to fetch Alice's item by id
-    b_get = await client.get(
-        f"/api/vault/items/{a_id}", headers=_auth_headers(bob)
-    )
+    b_get = await client.get(f"/api/vault/items/{a_id}", headers=_auth_headers(bob))
     assert b_get.status_code == 404
 
     # Bob cannot delete Alice's item
-    b_del = await client.delete(
-        f"/api/vault/items/{a_id}", headers=_auth_headers(bob)
-    )
+    b_del = await client.delete(f"/api/vault/items/{a_id}", headers=_auth_headers(bob))
     assert b_del.status_code == 404
 
 

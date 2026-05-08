@@ -3,6 +3,7 @@
 Storage philosophy: the server stores **only** ciphertext and KDF parameters.
 It never sees plaintext passwords, the master key, or the symmetric vault key.
 """
+
 from __future__ import annotations
 
 import uuid
@@ -22,9 +23,7 @@ if TYPE_CHECKING:
 class User(Base, TimestampMixin):
     __tablename__ = "users"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
 
     # Server-side hash of the client-derived auth_key.
@@ -68,9 +67,7 @@ class VaultItem(Base, TimestampMixin):
     __tablename__ = "vault_items"
     __table_args__ = (Index("ix_vault_items_user_type", "user_id", "item_type"),)
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
@@ -87,9 +84,7 @@ class Session(Base, TimestampMixin):
     __tablename__ = "sessions"
     __table_args__ = (UniqueConstraint("refresh_token_hash", name="uq_session_refresh"),)
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
