@@ -122,12 +122,18 @@ jobs:
       - name: Install
         run: npm ci
 
+      # @passman/web and @passman/extension import from @passman/core, whose
+      # package.json `types` field points at `dist/index.d.ts`. The dist
+      # folder doesn't exist until core is built, so typecheck of dependents
+      # fails ("Cannot find module '@passman/core'") if we skip this step.
+      - name: Build core (so dependents can resolve its types)
+        run: npm run build --workspace=@passman/core
+
       - name: Typecheck (all workspaces)
         run: npm run typecheck --workspaces --if-present
 
-      - name: Build (core first, then dependents)
+      - name: Build dependents (web, extension)
         run: |
-          npm run build --workspace=@passman/core
           npm run build --workspace=@passman/web
           npm run build --workspace=@passman/extension --if-present
 
