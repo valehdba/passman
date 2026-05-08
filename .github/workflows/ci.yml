@@ -66,6 +66,20 @@ jobs:
           ENV: test
         run: pytest tests/ -v
 
+      # Re-run the timing-parity test under upgraded Argon2 params — this is the
+      # exact scenario that exposed the original timing oracle (hardcoded dummy
+      # hash with weaker params than real users). Catches regressions of the
+      # dummy-hash fix in passman/auth.py.
+      - name: Login timing parity (upgraded server Argon2 params)
+        working-directory: server
+        env:
+          JWT_SECRET: ci-jwt-secret-must-be-at-least-thirty-two-bytes-long-1234567890
+          ENV: test
+          SERVER_ARGON2_TIME_COST: "3"
+          SERVER_ARGON2_MEMORY_COST: "65536"
+          SERVER_ARGON2_PARALLELISM: "4"
+        run: pytest tests/test_auth_timing.py -v --no-cov -s
+
       - name: Apply migrations to Postgres
         working-directory: server
         env:

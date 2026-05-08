@@ -1,0 +1,56 @@
+name: Security audit
+
+# Security audits run on every push, every PR, and on a weekly schedule so
+# advisories published after merge still surface.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"  # Mondays 06:00 UTC
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pip-audit:
+    name: pip-audit (Python deps)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pip-audit
+        run: python -m pip install --upgrade pip pip-audit
+
+      - name: Audit server dependencies
+        working-directory: server
+        # `--strict` makes any unparseable advisory a hard fail; tune later if noisy.
+        run: pip-audit --disable-pip --strict
+
+  npm-audit:
+    name: npm audit (TS deps)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci
+
+      # `--audit-level=high` blocks PRs only on high/critical advisories.
+      # Lower-severity issues are still reported in the workflow summary.
+      - name: Audit (high+)
+        run: npm audit --audit-level=high
