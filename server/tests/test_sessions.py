@@ -1,4 +1,5 @@
 """Tests for login / refresh / logout."""
+
 from __future__ import annotations
 
 import pytest
@@ -54,9 +55,7 @@ async def test_login_unknown_user_returns_401(client) -> None:  # type: ignore[n
 async def test_refresh_returns_new_access_token(client) -> None:  # type: ignore[no-untyped-def]
     _, login_resp = await _register_and_login(client, "ref@example.com")
     refresh = login_resp.json()["refresh_token"]
-    resp = await client.post(
-        "/api/sessions/refresh", json={"refresh_token": refresh}
-    )
+    resp = await client.post("/api/sessions/refresh", json={"refresh_token": refresh})
     assert resp.status_code == 200
     body = resp.json()
     assert body["access_token"]
@@ -65,9 +64,7 @@ async def test_refresh_returns_new_access_token(client) -> None:  # type: ignore
 
 @pytest.mark.asyncio
 async def test_refresh_with_invalid_token_returns_401(client) -> None:  # type: ignore[no-untyped-def]
-    resp = await client.post(
-        "/api/sessions/refresh", json={"refresh_token": "garbage"}
-    )
+    resp = await client.post("/api/sessions/refresh", json={"refresh_token": "garbage"})
     assert resp.status_code == 401
 
 
@@ -94,7 +91,5 @@ async def test_logout_revokes_refresh_token(client) -> None:  # type: ignore[no-
 
 @pytest.mark.asyncio
 async def test_logout_requires_auth(client) -> None:  # type: ignore[no-untyped-def]
-    resp = await client.request(
-        "DELETE", "/api/sessions", json={"refresh_token": "anything"}
-    )
+    resp = await client.request("DELETE", "/api/sessions", json={"refresh_token": "anything"})
     assert resp.status_code == 403  # HTTPBearer auto_error -> 403 by default

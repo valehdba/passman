@@ -2,14 +2,33 @@
 
 These define the wire format. They DO NOT define the encrypted plaintext
 schemas, which are the client's concern.
+
+Email handling
+--------------
+All email-bearing requests use :data:`NormalizedEmail`, an Annotated alias
+that strips whitespace and lowercases the address before any further
+validation. Centralizing this here means every router compares apples to
+apples — no router needs to remember to call ``.lower()``.
 """
+
 from __future__ import annotations
 
 import uuid
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints
+from pydantic import BaseModel, BeforeValidator, ConfigDict, EmailStr, Field, StringConstraints
+
+
+def _normalize_email(value: object) -> object:
+    """Strip + lowercase. Pass non-strings through to let EmailStr raise its own error."""
+    if isinstance(value, str):
+        return value.strip().lower()
+    return value
+
+
+NormalizedEmail = Annotated[EmailStr, BeforeValidator(_normalize_email)]
+
 
 # -- Reusable ----------------------------------------------------------------
 
@@ -43,7 +62,7 @@ class KdfParams(BaseModel):
 
 
 class RegisterRequest(KdfParams):
-    email: EmailStr
+    email: NormalizedEmail
     auth_key: str = Field(
         min_length=32, max_length=512, description="Base64 client-derived auth key"
     )
@@ -63,7 +82,7 @@ class KdfLookupResponse(KdfParams):
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: NormalizedEmail
     auth_key: str = Field(min_length=32, max_length=512)
 
 

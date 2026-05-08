@@ -1,4 +1,5 @@
 """Async SQLAlchemy engine, session factory, and declarative base."""
+
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
@@ -45,9 +46,7 @@ class TimestampMixin:
     """Adds created_at / updated_at columns."""
 
     created_at: Mapped[datetime] = mapped_column(default=_utcnow, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(
-        default=_utcnow, onupdate=_utcnow, nullable=False
-    )
+    updated_at: Mapped[datetime] = mapped_column(default=_utcnow, onupdate=_utcnow, nullable=False)
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:

@@ -3,6 +3,7 @@
 The server treats every item as an opaque ciphertext blob plus its type tag.
 No business logic operates on plaintext.
 """
+
 from __future__ import annotations
 
 import uuid
@@ -26,17 +27,13 @@ router = APIRouter(prefix="/api/vault", tags=["vault"])
 @router.get("/items", response_model=VaultListResponse)
 async def list_items(user: CurrentUserDep, session: SessionDep) -> VaultListResponse:
     stmt = (
-        select(VaultItem)
-        .where(VaultItem.user_id == user.id)
-        .order_by(VaultItem.updated_at.desc())
+        select(VaultItem).where(VaultItem.user_id == user.id).order_by(VaultItem.updated_at.desc())
     )
     items = (await session.execute(stmt)).scalars().all()
     return VaultListResponse(items=[VaultItemOut.model_validate(i) for i in items])
 
 
-@router.post(
-    "/items", response_model=VaultItemOut, status_code=status.HTTP_201_CREATED
-)
+@router.post("/items", response_model=VaultItemOut, status_code=status.HTTP_201_CREATED)
 async def create_item(
     payload: VaultItemCreate,
     user: CurrentUserDep,
@@ -89,11 +86,11 @@ async def delete_item(
 
 
 async def _load_owned_item(
-    session: SessionDep, user_id: uuid.UUID, item_id: uuid.UUID  # type: ignore[valid-type]
+    session: SessionDep,
+    user_id: uuid.UUID,
+    item_id: uuid.UUID,  # type: ignore[valid-type]
 ) -> VaultItem:
-    stmt = select(VaultItem).where(
-        VaultItem.id == item_id, VaultItem.user_id == user_id
-    )
+    stmt = select(VaultItem).where(VaultItem.id == item_id, VaultItem.user_id == user_id)
     item = (await session.execute(stmt)).scalar_one_or_none()
     if item is None:
         raise VaultItemNotFoundError()

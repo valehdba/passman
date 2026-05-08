@@ -1,6 +1,9 @@
 """Session endpoints — login, refresh, logout."""
+
 from __future__ import annotations
 
+import logging
+from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Header, status
@@ -8,16 +11,21 @@ from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 
 from ..auth import (
+    auth_hash_needs_rehash,
     create_access_token,
     generate_refresh_token,
+    hash_auth_key,
     hash_refresh_token,
     verify_auth_key,
+    verify_dummy_auth_key,
 )
 from ..deps import CurrentUserDep, SessionDep
 from ..errors import InvalidCredentialsError, InvalidTokenError
 from ..models import Session as SessionModel
 from ..models import User
 from ..schemas import LoginRequest, RefreshRequest, RefreshResponse, TokenPair
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
@@ -39,20 +47,34 @@ async def login(
 ) -> TokenPair:
     """Verify the auth_key and issue access + refresh tokens.
 
-    The error path uses constant work via a dummy verification when the user
-    does not exist, to avoid exposing user existence via timing.
+    The unknown-user branch runs :func:`verify_dummy_auth_key` so the wall-time
+    matches the wrong-password branch — closing the timing oracle that would
+    otherwise leak whether an email is registered.
     """
     user = (
-        await session.execute(select(User).where(User.email == payload.email.lower()))
+        await session.execute(select(User).where(User.email == payload.email))
     ).scalar_one_or_none()
 
     if user is None:
-        # Dummy verify so timing is comparable to the real path.
-        verify_auth_key(payload.auth_key, "$argon2id$v=19$m=19456,t=2,p=1$AAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")  # noqa: E501
+        # Equalize timing using the SAME hasher real users use, so this stays
+        # honest even if `server_argon2_*` settings are bumped later.
+        verify_dummy_auth_key(payload.auth_key)
         raise InvalidCredentialsError()
 
     if not verify_auth_key(payload.auth_key, user.auth_hash):
         raise InvalidCredentialsError()
+
+    # Opportunistically upgrade to current Argon2 parameters when the stored
+    # hash was produced under a weaker policy. Failure here must not block
+    # login — it's a best-effort hygiene step. We log at warning level so
+    # repeated failures are visible to operators.
+    if auth_hash_needs_rehash(user.auth_hash):
+        try:
+            user.auth_hash = hash_auth_key(payload.auth_key)
+        except Exception:
+            # Swallowing here is intentional: a failed rehash must never
+            # convert a legitimate login into a 5xx.
+            logger.warning("auth_hash rehash failed for user_id=%s", user.id, exc_info=True)
 
     raw_refresh, refresh_hash, refresh_ttl = generate_refresh_token()
     access_token, access_ttl = create_access_token(str(user.id))
@@ -79,19 +101,28 @@ async def login(
 async def refresh(payload: RefreshRequest, session: SessionDep) -> RefreshResponse:
     """Exchange a refresh token for a new access token.
 
-    Refresh tokens are single-use? In v1 we keep them reusable until expiry
-    — simpler. Rotating with reuse-detection is a future hardening step.
+    Refresh tokens are reusable until expiry in v1; rotation with reuse
+    detection is on the roadmap (see ``docs/SECURITY.md``).
     """
     refresh_hash = hash_refresh_token(payload.refresh_token)
-    stmt = select(SessionModel).where(SessionModel.refresh_token_hash == refresh_hash)
-    db_session = (await session.execute(stmt)).scalar_one_or_none()
+    # Join with User so a refresh token whose owner has been deleted yields 401
+    # immediately (defense in depth — ON DELETE CASCADE should already cover this).
+    stmt = (
+        select(SessionModel, User)
+        .join(User, User.id == SessionModel.user_id)
+        .where(SessionModel.refresh_token_hash == refresh_hash)
+    )
+    row = (await session.execute(stmt)).first()
+    if row is None:
+        raise InvalidTokenError("Refresh token revoked or unknown")
 
-    if db_session is None or db_session.revoked_at is not None:
+    db_session, user = row
+    if db_session.revoked_at is not None:
         raise InvalidTokenError("Refresh token revoked or unknown")
     if _ensure_aware(db_session.expires_at) <= _utcnow():
         raise InvalidTokenError("Refresh token expired")
 
-    access_token, access_ttl = create_access_token(str(db_session.user_id))
+    access_token, access_ttl = create_access_token(str(user.id))
     return RefreshResponse(access_token=access_token, access_expires_in=access_ttl)
 
 
@@ -107,9 +138,7 @@ async def logout(
         SessionModel.refresh_token_hash == refresh_hash,
         SessionModel.user_id == user.id,
     )
-    try:
+    # Idempotent — already-gone is fine, no error returned to the client.
+    with suppress(NoResultFound):
         db_session = (await session.execute(stmt)).scalar_one()
-    except NoResultFound:
-        # Idempotent — already gone is fine.
-        return
-    db_session.revoked_at = _utcnow()
+        db_session.revoked_at = _utcnow()

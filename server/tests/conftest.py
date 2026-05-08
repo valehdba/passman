@@ -5,6 +5,7 @@ PostgreSQL, but the schema is portable enough for SQLite to exercise our
 business logic. CI also runs an integration job against a real Postgres
 service container — see .github/workflows/ci.yml.
 """
+
 from __future__ import annotations
 
 import os

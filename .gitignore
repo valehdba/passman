@@ -23,6 +23,8 @@ dist/
 .coverage.*
 htmlcov/
 *.egg
+.venv/
+venv/
 
 # --- Node / TypeScript ---
 node_modules/

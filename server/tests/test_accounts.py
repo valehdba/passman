@@ -1,4 +1,5 @@
 """Tests for the accounts router."""
+
 from __future__ import annotations
 
 import pytest
@@ -71,9 +72,7 @@ async def test_kdf_lookup_normalizes_email_case(client) -> None:  # type: ignore
     await client.post(
         "/api/accounts/register", json=make_register_payload("CaseSensitive@Example.com")
     )
-    resp = await client.get(
-        "/api/accounts/kdf", params={"email": "casesensitive@example.com"}
-    )
+    resp = await client.get("/api/accounts/kdf", params={"email": "casesensitive@example.com"})
     assert resp.status_code == 200
     body = resp.json()
     # If normalization works, we get the real salt (which is the constant in payload)

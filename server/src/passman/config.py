@@ -2,6 +2,7 @@
 
 All secrets MUST come from the environment — never commit values here.
 """
+
 from __future__ import annotations
 
 from functools import lru_cache
