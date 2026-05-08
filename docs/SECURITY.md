@@ -29,6 +29,12 @@ of CPU. A 12-character random password is effectively unbreakable; a
 12-character user-chosen password is hard but not impossible — UI enforces
 a 12-character minimum to push users away from the worst zone.
 
+Server-side Argon2 parameters (`server_argon2_*` in `config.py`) can be
+strengthened over time. Successful logins automatically re-hash the
+stored `auth_hash` under the current parameters
+(`auth_hash_needs_rehash` → `hash_auth_key`), so an upgrade rolls out
+gradually without forcing password resets.
+
 ### Compromised server / malicious admin
 Same defenses as the breach scenario *for stored data*. A malicious server
 can:
@@ -93,7 +99,13 @@ the assumed transport.
 - `argon2-cffi.PasswordHasher.verify` is constant-time.
 - Refresh-token comparison uses `hmac.compare_digest`.
 - The login path runs Argon2id on a dummy hash for unknown users to
-  equalize timing.
+  equalize timing. The dummy hash is generated lazily under the
+  *current* server hasher (`passman.auth._dummy_auth_hash`), so it
+  always matches the work done for real users — even after operators
+  upgrade `server_argon2_*` parameters. A timing-parity regression
+  test in CI (`tests/test_auth_timing.py`) re-runs under upgraded
+  parameters and asserts the unknown-user vs wrong-password medians
+  stay within 0.5x..2.0x of each other.
 
 ## What this design does **not** protect against
 
