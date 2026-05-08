@@ -5,61 +5,65 @@
 - Python 3.11+
 - Node.js 20+
 - Docker (for local Postgres)
-- Git configured with `valeh.agayev@gmail.com` (CI rejects other authors)
 
-```bash
-git config user.email "valeh.agayev@gmail.com"
-git config user.name  "valehdba"
-```
+If you haven't gone through the install steps yet, do that first —
+[`README.md`](../README.md#installation) walks through the full setup
+including environment variable configuration. This document picks up
+where that leaves off.
 
-## First-time setup
+## First-time setup (terse, for repeat clones)
 
 ```bash
 git clone <repo>
 cd passman
-
-# Postgres
 docker compose up -d
 
-# Python backend
+# Backend
 cd server
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 cp ../.env.example ../.env
 # Edit ../.env — set JWT_SECRET to `openssl rand -hex 64`
-
 alembic upgrade head
 uvicorn passman.main:app --reload --port 8000
 
-# In another terminal — TS workspaces
-cd ..
+# TS workspaces (new terminal, repo root)
 npm install
-npm run build --workspace=@passman/core   # core must be built before web/ext
-cd packages/web && npm run dev            # http://localhost:5173
+npm run build --workspace=@passman/core   # core must be built first
+npm run dev   --workspace=@passman/web    # http://localhost:5173
 ```
 
 ## Common commands
 
-| Task                       | Command                                           |
-| -------------------------- | ------------------------------------------------- |
-| Run server tests           | `cd server && pytest`                             |
-| Run server tests + coverage| `cd server && pytest`                             |
-| Lint Python                | `cd server && ruff check src tests`               |
-| Format Python              | `cd server && ruff format src tests`              |
-| Run TS tests               | `npm test --workspaces --if-present`              |
-| Typecheck TS               | `npm run typecheck --workspaces --if-present`     |
-| Build TS                   | `npm run build --workspace=@passman/core` (etc.)  |
-| Generate new migration     | `cd server && alembic revision --autogenerate -m "..."` |
-| Apply migrations           | `cd server && alembic upgrade head`               |
-| Rollback one migration     | `cd server && alembic downgrade -1`               |
+| Task                       | Command                                                  |
+| -------------------------- | -------------------------------------------------------- |
+| Run server tests           | `cd server && pytest`                                    |
+| Lint Python                | `cd server && ruff check src tests`                      |
+| Format Python              | `cd server && ruff format src tests`                     |
+| Run TS tests               | `npm test --workspaces --if-present`                     |
+| Typecheck TS               | `npm run typecheck --workspaces --if-present`            |
+| Build core (required for dependents) | `npm run build --workspace=@passman/core`      |
+| Build web                  | `npm run build --workspace=@passman/web`                 |
+| Generate new migration     | `cd server && alembic revision --autogenerate -m "..."`  |
+| Apply migrations           | `cd server && alembic upgrade head`                      |
+| Rollback one migration     | `cd server && alembic downgrade -1`                      |
+| Audit Python deps          | `cd server && pip-audit`                                 |
+| Audit npm deps             | `npm audit`                                              |
 
 ## Testing strategy
 
 - **Unit tests** (`server/tests/`, `packages/*/tests/`) run on every PR.
   They use SQLite for the backend and never touch the network.
+- **Timing-parity test** (`server/tests/test_auth_timing.py`) runs a
+  second time in CI under upgraded Argon2 parameters
+  (`SERVER_ARGON2_*`), guarding the login dummy-verify mechanism that
+  closes the email-enumeration timing oracle.
 - **Integration test** (`packages/core/tests/integration.test.ts`) is
   skipped unless `PASSMAN_INTEGRATION_URL` is set — CI sets this after
   starting a real server with a real Postgres.
+- **Security audit** workflow runs `pip-audit` (Python) and
+  `npm audit` (TS) on every PR and weekly on a cron, blocking on
+  high-severity advisories in production deps.
 - **CodeQL** runs weekly on a schedule + on every push to `main`.
 
 ## Adding a new vault field
@@ -73,11 +77,14 @@ cd packages/web && npm run dev            # http://localhost:5173
 
 ## Commit guidelines
 
-- All commits must use `valeh.agayev@gmail.com`. Enforced in CI.
-- Conventional commits encouraged (`feat:`, `fix:`, `docs:`, etc.).
+- Conventional commits encouraged: `feat:`, `fix:`, `refactor:`,
+  `docs:`, `test:`, `ci:`, `chore:`, `style:`.
 - Sign commits with GPG when possible: `git commit -S`.
-- Run `pytest`, `ruff check`, and `npm run typecheck --workspaces` before
-  pushing — it's cheaper than fixing CI.
+- Run `pytest`, `ruff check`, `ruff format --check`, and
+  `npm run typecheck --workspaces` before pushing — it's cheaper than
+  fixing CI.
+- Keep commits atomic: one logical concern per commit. Reviewers can
+  squash on merge if they prefer a single-commit history.
 
 ## Deploy notes
 
