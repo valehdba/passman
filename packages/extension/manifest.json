@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Passman",
+  "version": "0.1.0",
+  "description": "Zero-knowledge password manager autofill",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["http://localhost:8000/*", "https://*/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Passman"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  }
+}

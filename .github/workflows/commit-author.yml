@@ -1,0 +1,45 @@
+name: Commit author guard
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-author:
+    name: Verify all commits are authored by valeh.agayev@gmail.com
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check commit authors
+        run: |
+          set -euo pipefail
+          # On PRs, GitHub gives us the merge commit; we want the actual commits.
+          if [ -n "${GITHUB_BASE_REF:-}" ]; then
+            range="origin/${GITHUB_BASE_REF}..HEAD"
+          else
+            # Push to main: check this push only.
+            range="${{ github.event.before }}..${{ github.event.after }}"
+            # Skip empty/initial pushes.
+            if [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+              range="HEAD~1..HEAD"
+            fi
+          fi
+
+          echo "Checking range: $range"
+          bad=$(git log "$range" --pretty=format:'%ae' | grep -v -i '^valeh\.agayev@gmail\.com$' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::Commits from disallowed authors found:"
+            git log "$range" --pretty=format:'%h %ae %s' | grep -v -i 'valeh\.agayev@gmail\.com'
+            echo ""
+            echo "Project policy: every commit must be authored by valeh.agayev@gmail.com (valehdba)."
+            exit 1
+          fi
+          echo "All commits authored by valeh.agayev@gmail.com ✅"

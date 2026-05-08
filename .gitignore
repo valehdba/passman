@@ -1,0 +1,42 @@
+# --- Secrets ---
+# NEVER commit real secrets. Use .env.example as the template.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*_token
+*_token.txt
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg
+
+# --- Node / TypeScript ---
+node_modules/
+packages/*/dist/
+packages/*/build/
+*.tsbuildinfo
+
+# --- Editors / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# --- Logs ---
+*.log
+server.log

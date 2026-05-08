@@ -1,0 +1,21 @@
+{
+  "name": "@passman/extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Passman browser extension — Manifest V3 autofill",
+  "scripts": {
+    "build": "tsc --noEmit && vite build",
+    "dev": "vite build --watch",
+    "lint": "eslint 'src/**/*.ts'",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@passman/core": "*"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.287",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.3"
+  }
+}
