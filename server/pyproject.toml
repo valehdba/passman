@@ -12,9 +12,17 @@ dependencies = [
     "pydantic==2.10.3",
     "pydantic-settings==2.6.1",
     "argon2-cffi==23.1.0",
-    "python-jose[cryptography]==3.3.0",
+    # python-jose 3.3.0 had two PYSEC advisories (PYSEC-2024-232, -233);
+    # 3.4.0 is a patch bump that clears both. Auth-relevant.
+    # NOTE: python-jose is now in maintenance-only mode upstream; a Phase 2
+    # follow-up should evaluate migrating to pyjwt or authlib. python-jose
+    # 3.4.0 hard-pins pyasn1<0.5 which prevents picking up CVE-2026-30922
+    # in pyasn1 — see security.yml --ignore-vuln entries.
+    "python-jose[cryptography]==3.4.0",
     "email-validator==2.2.0",
-    "python-multipart==0.0.19",
+    # python-multipart 0.0.19 had three CVEs (CVE-2026-24486, -40347, -42561);
+    # 0.0.27 is the lowest version that clears all three.
+    "python-multipart==0.0.27",
 ]
 
 [project.optional-dependencies]
