@@ -38,12 +38,26 @@ jobs:
 
       - name: Install runtime deps only
         working-directory: server
-        run: pip install -e .
+        # Non-editable install so the resolved dep set ends up in `pip freeze`
+        # without the `-e` marker that would force pip-audit to query PyPI for
+        # the project itself.
+        run: pip install .
+
+      - name: Build runtime requirements file (excludes the project itself)
+        working-directory: server
+        # pip-audit's environment-mode emits warnings for any editable or
+        # non-PyPI distribution; under --strict those warnings become fatal.
+        # Auditing a requirements file we generate sidesteps the issue
+        # entirely: passman-server is filtered out, every other package
+        # gets audited.
+        run: |
+          pip freeze --exclude-editable \
+            | grep -v '^passman-server' \
+            > /tmp/runtime-reqs.txt
+          wc -l /tmp/runtime-reqs.txt
 
       - name: Audit runtime deps (gate)
-        working-directory: server
-        # `--strict` makes unparseable advisories hard fails. `--skip-editable`
-        # ignores the project itself (which isn't on PyPI). The
+        # `--strict` makes unparseable advisories hard fails. The
         # `--ignore-vuln` entries below are tracked exceptions:
         #
         #   CVE-2025-54121, CVE-2025-62727 — starlette, transitive via
@@ -57,7 +71,7 @@ jobs:
         #
         # Each exception MUST have a tracking issue and a removal target.
         run: |
-          pip-audit --strict --skip-editable \
+          pip-audit --strict -r /tmp/runtime-reqs.txt \
             --ignore-vuln CVE-2025-54121 \
             --ignore-vuln CVE-2025-62727 \
             --ignore-vuln CVE-2026-30922
