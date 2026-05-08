@@ -1,9 +1,11 @@
 """Account endpoints: registration and pre-login KDF parameter lookup.
 
-`/kdf?email=...` is intentionally rate-limited and returns deterministic
-no-op parameters for non-existent users — this prevents email enumeration
-via timing or response-shape differences.
+``/kdf?email=...`` returns deterministic decoy parameters for non-existent
+users — this prevents email enumeration via response-shape differences.
+The server-side login dummy-verify (see :mod:`passman.auth`) closes the
+matching timing-side oracle.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -23,6 +25,11 @@ from ..schemas import KdfLookupResponse, RegisterRequest, RegisterResponse
 router = APIRouter(prefix="/api/accounts", tags=["accounts"])
 
 
+def _normalize_email(raw: str) -> str:
+    """Mirror schemas.NormalizedEmail behavior for query-string inputs."""
+    return raw.strip().lower()
+
+
 @router.post(
     "/register",
     response_model=RegisterResponse,
@@ -32,16 +39,16 @@ async def register(payload: RegisterRequest, session: SessionDep) -> RegisterRes
     """Create a new account.
 
     The client has already:
-      1. Generated a random `kdf_salt` and `symmetric_key`.
-      2. Derived `master_key = Argon2id(password, kdf_salt, params)`.
-      3. Derived `auth_key` from master_key (one-way).
+      1. Generated a random ``kdf_salt`` and ``symmetric_key``.
+      2. Derived ``master_key = Argon2id(password, kdf_salt, params)``.
+      3. Derived ``auth_key`` from master_key (one-way).
       4. Encrypted the symmetric_key with the master_key.
 
-    The server stores: email, kdf_params (so login can re-derive), the
+    The server stores: email, KDF params (so login can re-derive), the
     *hash* of auth_key, and the encrypted symmetric_key blob.
     """
     user = User(
-        email=payload.email.lower(),
+        email=payload.email,  # already normalized by NormalizedEmail validator
         kdf_salt=payload.kdf_salt,
         kdf_time_cost=payload.kdf_time_cost,
         kdf_memory_cost=payload.kdf_memory_cost,
@@ -71,7 +78,7 @@ async def kdf_lookup(
     stable per email but indistinguishable from a real salt.
     """
     settings = get_settings()
-    normalized = email.strip().lower()
+    normalized = _normalize_email(email)
 
     user = (
         await session.execute(select(User).where(User.email == normalized))
