@@ -12,7 +12,7 @@ const fastParams: KdfParams = {
   parallelism: 1,
 };
 
-describe("KDF", () => {
+describe("KDF", { timeout: 30_000 }, () => {
   it("derives a 32-byte master key", async () => {
     const key = await deriveMasterKey("correct-horse-battery-staple", fastParams);
     expect(key).toBeInstanceOf(Uint8Array);
@@ -63,4 +63,4 @@ describe("KDF", () => {
     const k2 = await deriveAuthKey(masterKey, "different-password");
     expect(k1).not.toBe(k2);
   });
-}, { timeout: 30_000 });
+});
