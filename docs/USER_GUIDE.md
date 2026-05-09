@@ -296,7 +296,31 @@ matches the URL stored on the item.
 
 ---
 
-## 7. Tips
+## 7. White-label branding
+
+Passman ships unbranded by default, but a single `branding.json` file
+swaps the logo, app name, tagline, and accent colour app-wide. No
+rebuild required — operators edit one file (or mount it as a
+ConfigMap) and the same web bundle serves any company.
+
+The login page below shows what the default and a custom override look
+like side by side:
+
+| Default                        | White-labelled                          |
+| ------------------------------ | --------------------------------------- |
+| ![Default Passman](img/login.png) | ![Acme Vault override](img/login-whitelabel.png) |
+
+The brand colour cascades to every accent in the UI — the Connect
+button on every grid row, the focus rings, the protocol pills, the
+selection highlight. Setting `brandColor` once re-themes the whole
+product.
+
+See [`docs/BRANDING.md`](BRANDING.md) for the full field reference,
+CSP notes, and a 60-second quick-start.
+
+---
+
+## 8. Tips
 
 - **Use the protocol field.** Even if Passman can infer the protocol
   from the port, declaring it explicitly is what unlocks the right

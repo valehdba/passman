@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Acme Vault — Unlock</title>
+    <link rel="stylesheet" href="../../packages/web/src/styles.css" />
+    <style>
+      /* Equivalent to applyBranding({ brandColor: "#0a66c2" }) at runtime — */
+      /* the React app sets these in JS so any already-painted accent re-themes. */
+      :root {
+        --brand: #0a66c2;
+        --brand-2: #084d92;
+        --brand-soft: rgba(10, 102, 194, 0.12);
+        --brand-line: rgba(10, 102, 194, 0.32);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="auth-container">
+      <div class="auth-brand">
+        <img class="brand-logo" width="28" height="28"
+             src="../../packages/web/public/branding/logo.example.svg"
+             alt="Acme Vault logo" />
+        <span class="auth-brand-name">Acme Vault</span>
+      </div>
+      <h1>Unlock your vault</h1>
+      <p class="auth-tagline">Your team's credentials, safely off the cloud.</p>
+      <form>
+        <label>
+          Email
+          <input type="email" value="ops@acme.example" />
+        </label>
+        <label>
+          Master password
+          <input type="password" value="............" />
+        </label>
+        <button type="submit">Unlock</button>
+      </form>
+      <p>New here? <a href="register.html">Create a vault</a></p>
+    </main>
+  </body>
+</html>

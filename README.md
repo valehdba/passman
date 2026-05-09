@@ -47,8 +47,9 @@ auto-clear; the server still sees only ciphertext.
 | `docs/`               | Architecture and security docs.                             |
 
 Read the full design in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), the
-threat model in [`docs/SECURITY.md`](docs/SECURITY.md), and a screenshot
-walkthrough of every screen in [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md).
+threat model in [`docs/SECURITY.md`](docs/SECURITY.md), a screenshot walkthrough
+of every screen in [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md), and the
+white-label branding guide in [`docs/BRANDING.md`](docs/BRANDING.md).
 
 ## Installation
 

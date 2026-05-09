@@ -4,9 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { buildRegistration } from "@passman/core";
 
 import { ApiError, api } from "../api/client.js";
+import { useBranding } from "../branding/index.js";
+import { BrandHeader } from "./vault/BrandHeader.js";
 
 export function RegisterPage() {
   const nav = useNavigate();
+  const branding = useBranding();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -47,7 +50,11 @@ export function RegisterPage() {
 
   return (
     <main className="auth-container">
+      <BrandHeader />
       <h1>Create your vault</h1>
+      {branding.tagline && (
+        <p className="auth-tagline">{branding.tagline}</p>
+      )}
       <p className="warning">
         ⚠️ Your master password is the only key. We can't recover it. If you
         forget it, your vault is permanently inaccessible.

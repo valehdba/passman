@@ -364,6 +364,50 @@ aside.vault-side {
   box-shadow: 0 0 14px rgba(62, 207, 142, 0.35);
   flex-shrink: 0;
 }
+.brand-mark.brand-mark-lg {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+.brand-logo {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+.brand-logo[width="28"] { width: 28px; height: 28px; border-radius: 8px; }
+
+.brand-footer {
+  margin-top: 0.7rem;
+  padding: 0.5rem 0.6rem 0;
+  border-top: 1px solid var(--line);
+  font-size: 0.7rem;
+  color: var(--muted-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Branded header on the auth pages — sits above "Unlock your vault" /
+   "Create your vault" so the customer's logo + product name are the
+   first things a user sees. */
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: -0.015em;
+}
+.auth-brand .auth-brand-name { color: var(--fg); }
+
+.auth-tagline {
+  margin: -0.15rem 0 0.85rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
 
 .side-search {
   position: relative;

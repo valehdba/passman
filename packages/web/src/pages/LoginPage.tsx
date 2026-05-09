@@ -4,11 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { deriveLoginAuthKey, unlock } from "@passman/core";
 
 import { ApiError, api } from "../api/client.js";
+import { useBranding } from "../branding/index.js";
 import { useSession } from "../stores/session.js";
+import { BrandHeader } from "./vault/BrandHeader.js";
 
 export function LoginPage() {
   const nav = useNavigate();
   const setSession = useSession((s) => s.setSession);
+  const branding = useBranding();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +63,11 @@ export function LoginPage() {
 
   return (
     <main className="auth-container">
+      <BrandHeader />
       <h1>Unlock your vault</h1>
+      {branding.tagline && (
+        <p className="auth-tagline">{branding.tagline}</p>
+      )}
       <form onSubmit={onSubmit}>
         <label>
           Email
