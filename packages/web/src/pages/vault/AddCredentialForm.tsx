@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { Protocol, VaultLoginPlaintext } from "@passman/core";
 
 import { defaultPort, inferProtocolFromPort } from "../../connect/index.js";
+import type { StorageLocation } from "../../storage/index.js";
 
 interface DraftState {
   name: string;
@@ -50,12 +51,13 @@ const PROTOCOL_OPTIONS: { value: Protocol | ""; label: string }[] = [
 ];
 
 interface Props {
-  onSubmit: (item: VaultLoginPlaintext) => Promise<void>;
+  onSubmit: (item: VaultLoginPlaintext, location: StorageLocation) => Promise<void>;
   onCancel: () => void;
 }
 
 export function AddCredentialForm({ onSubmit, onCancel }: Props) {
   const [draft, setDraft] = useState<DraftState>(EMPTY_DRAFT);
+  const [storeLocally, setStoreLocally] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -96,8 +98,9 @@ export function AddCredentialForm({ onSubmit, onCancel }: Props) {
         ...(draft.environment ? { environment: draft.environment } : {}),
         ...(draft.url ? { url: draft.url } : {}),
       };
-      await onSubmit(cleaned);
+      await onSubmit(cleaned, storeLocally ? "local" : "server");
       setDraft(EMPTY_DRAFT);
+      setStoreLocally(false);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Failed to add credential");
     } finally {
@@ -238,6 +241,26 @@ export function AddCredentialForm({ onSubmit, onCancel }: Props) {
           />
         </label>
       </div>
+
+      <label className={`storage-toggle ${storeLocally ? "on" : ""}`}>
+        <input
+          type="checkbox"
+          checked={storeLocally}
+          onChange={(e) => setStoreLocally(e.target.checked)}
+        />
+        <span className="storage-toggle-body">
+          <span className="storage-toggle-title">
+            Store on this device only
+          </span>
+          <span className="storage-toggle-hint">
+            Encrypted ciphertext stays in this browser's IndexedDB · never sent to the server.
+            <br />
+            <strong>No cross-device sync</strong> · cleared if you clear site data ·
+            single point of failure if this disk dies. Use for credentials you never
+            want stored remotely, even encrypted.
+          </span>
+        </span>
+      </label>
 
       {err && <p className="error">{err}</p>}
 

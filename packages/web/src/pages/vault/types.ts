@@ -1,8 +1,10 @@
 import type { VaultLoginPlaintext } from "@passman/core";
 
-import type { VaultItem } from "../../api/client.js";
+import type { LocatedItem, StorageLocation } from "../../storage/index.js";
 
-export interface DecryptedItem extends VaultItem {
+export type { StorageLocation };
+
+export interface DecryptedItem extends LocatedItem {
   plaintext: VaultLoginPlaintext;
 }
 

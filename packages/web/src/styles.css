@@ -738,12 +738,19 @@ main.vault-main {
   min-width: 0;
   line-height: 1.25;
 }
+.name-cell .name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
 .name-cell .name {
   font-weight: 600;
   font-size: 0.86rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
 }
 .name-cell .url {
   display: block;
@@ -892,6 +899,91 @@ main.vault-main {
   border-radius: 6px;
   cursor: pointer;
   font-family: inherit;
+}
+
+/* Storage-location toggle in the Add form */
+.storage-toggle {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.65rem;
+  align-items: flex-start;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.012);
+  margin-top: 0.6rem;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--fg);
+  flex-direction: row;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.storage-toggle:hover { border-color: var(--line-strong); }
+.storage-toggle.on {
+  border-color: var(--brand-line);
+  background: var(--brand-soft);
+}
+.storage-toggle input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0.2rem 0 0 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  background: var(--bg-deep);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  flex-shrink: 0;
+}
+.storage-toggle input[type="checkbox"]:checked {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+.storage-toggle input[type="checkbox"]:checked::after {
+  content: "✓";
+  color: #062a18;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.storage-toggle-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+.storage-toggle-title {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.storage-toggle-hint {
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+.storage-toggle-hint strong {
+  color: var(--fg-2);
+  font-weight: 500;
+}
+
+/* Per-row "Device" badge in the grid Name cell. Sized to slot inside the
+   flex `.name-row`; flex-shrink:0 prevents it from being squeezed by the
+   ellipsis-truncated name span. */
+.storage-badge {
+  display: inline-block;
+  padding: 0.05rem 0.35rem;
+  border-radius: 3px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--brand);
+  background: var(--brand-soft);
+  border: 1px solid var(--brand-line);
+  font-family: var(--mono);
+  flex-shrink: 0;
 }
 
 /* =============================================================================
