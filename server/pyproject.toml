@@ -28,7 +28,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest==9.0.3",
-    "pytest-asyncio==0.24.0",
+    # pytest-asyncio 0.24 capped at pytest<8.4; 1.x is the first line that
+    # supports pytest 9.
+    "pytest-asyncio==1.3.0",
     "pytest-cov==6.0.0",
     "httpx==0.28.1",
     "aiosqlite==0.20.0",
