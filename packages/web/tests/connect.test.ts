@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { buildConnectCommand } from "../src/connect/command.js";
 import { buildJdbcUrl, supportsJdbc } from "../src/connect/jdbc.js";
 import {
+  buildTargetSubtitle,
+  canBuildRdp,
   defaultPort,
   effectiveProtocol,
   engineCode,
@@ -349,5 +351,106 @@ describe("buildRdpFile", () => {
 
   it("returns null when there is no host", () => {
     expect(buildRdpFile({ ...baseItem, protocol: "rdp" })).toBeNull();
+  });
+});
+
+describe("buildTargetSubtitle (Connect dialog header subtitle)", () => {
+  it("renders host:port + user without duplicating the host", () => {
+    expect(
+      buildTargetSubtitle({
+        ...baseItem,
+        hostname: "db-prod-01",
+        ip: "10.0.0.42",
+        port: 5432,
+        username: "postgres",
+      }),
+    ).toBe("db-prod-01:5432 · 10.0.0.42 · postgres");
+  });
+
+  it("collapses ip when it equals the hostname", () => {
+    expect(
+      buildTargetSubtitle({
+        ...baseItem,
+        hostname: "10.0.0.42",
+        ip: "10.0.0.42",
+        port: 5432,
+      }),
+    ).toBe("10.0.0.42:5432 · alice");
+  });
+
+  it("falls back to ip when hostname is missing", () => {
+    expect(
+      buildTargetSubtitle({
+        ...baseItem,
+        ip: "10.0.0.42",
+        port: 5432,
+      }),
+    ).toBe("10.0.0.42:5432 · alice");
+  });
+
+  it("encodes Windows AD domain into the user segment for RDP entries", () => {
+    expect(
+      buildTargetSubtitle({
+        ...baseItem,
+        protocol: "rdp",
+        hostname: "host",
+        port: 3389,
+        username: "admin",
+        domain: "EXAMPLE",
+      }),
+    ).toBe("host:3389 · EXAMPLE\\admin");
+  });
+
+  it("omits port when unset", () => {
+    expect(
+      buildTargetSubtitle({ ...baseItem, hostname: "host", username: "alice" }),
+    ).toBe("host · alice");
+  });
+
+  it("returns the empty string when no host or user", () => {
+    expect(buildTargetSubtitle({ name: "x", username: "", password: "" })).toBe("");
+  });
+});
+
+describe("canBuildRdp (gates the Open RDP session option)", () => {
+  it("is true for an RDP credential with a host", () => {
+    expect(
+      canBuildRdp({
+        ...baseItem,
+        protocol: "rdp",
+        hostname: "erp-db-01",
+        port: 3389,
+      }),
+    ).toBe(true);
+  });
+
+  it("is true when protocol is inferred from port 3389", () => {
+    // No explicit protocol — port 3389 should infer RDP.
+    expect(
+      canBuildRdp({ ...baseItem, hostname: "host", port: 3389 }),
+    ).toBe(true);
+  });
+
+  it("is FALSE for a Postgres credential — its port isn't an RDP port", () => {
+    // This is the regression. Without this gate, canBuildRdp would yield
+    // an .rdp file pointing at port 5432, which doesn't run RDP.
+    expect(
+      canBuildRdp({
+        ...baseItem,
+        protocol: "psql",
+        hostname: "db-prod-01",
+        port: 5432,
+      }),
+    ).toBe(false);
+  });
+
+  it("is false for any non-RDP protocol with a host", () => {
+    expect(canBuildRdp({ ...baseItem, protocol: "ssh", hostname: "h" })).toBe(false);
+    expect(canBuildRdp({ ...baseItem, protocol: "redis", hostname: "h" })).toBe(false);
+    expect(canBuildRdp({ ...baseItem, protocol: "mongo", hostname: "h" })).toBe(false);
+  });
+
+  it("is false for an RDP credential without a host", () => {
+    expect(canBuildRdp({ ...baseItem, protocol: "rdp", port: 3389 })).toBe(false);
   });
 });

@@ -1,9 +1,11 @@
 export {
-  effectiveProtocol,
-  inferProtocolFromPort,
-  engineCode,
-  protocolLabel,
+  buildTargetSubtitle,
+  canBuildRdp,
   defaultPort,
+  effectiveProtocol,
+  engineCode,
+  inferProtocolFromPort,
+  protocolLabel,
 } from "./protocol.js";
 export { buildJdbcUrl, supportsJdbc } from "./jdbc.js";
 export { buildConnectCommand } from "./command.js";

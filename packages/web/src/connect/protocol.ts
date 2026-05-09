@@ -1,5 +1,7 @@
 import type { Protocol, VaultLoginPlaintext } from "@passman/core";
 
+
+
 /**
  * Map a port number to its most likely protocol. Used as a fallback when a
  * credential predates the protocol field, or for sane defaults in the Add
@@ -76,4 +78,38 @@ export function defaultPort(protocol: Protocol | undefined): number | undefined 
     case "https": return 443;
     default: return undefined;
   }
+}
+
+/**
+ * Build the dialog "where this points" subtitle. Concatenates the
+ * canonical host:port, then any non-redundant context (a separate IP if
+ * the hostname is the primary identifier, the username with optional AD
+ * domain).
+ */
+export function buildTargetSubtitle(item: VaultLoginPlaintext): string {
+  const host = item.hostname || item.ip;
+  const hostPort = host
+    ? item.port !== undefined ? `${host}:${item.port}` : host
+    : "";
+  const userLabel = item.username
+    ? item.domain ? `${item.domain}\\${item.username}` : item.username
+    : "";
+  // Show the IP as a separate segment only when the hostname was used as
+  // the primary identifier — otherwise we'd repeat it.
+  const extraIp = item.hostname && item.ip && item.ip !== item.hostname
+    ? item.ip
+    : "";
+  return [hostPort, extraIp, userLabel].filter(Boolean).join(" · ");
+}
+
+/**
+ * Whether a credential's Connect dialog should enable the "Open RDP session"
+ * action. Limited to credentials whose effective protocol is RDP — for any
+ * other protocol the credential's port is for a different service and the
+ * generated .rdp file would point at the wrong port (e.g. 5432 for a
+ * Postgres credential).
+ */
+export function canBuildRdp(item: VaultLoginPlaintext): boolean {
+  if (effectiveProtocol(item) !== "rdp") return false;
+  return Boolean(item.hostname || item.ip);
 }

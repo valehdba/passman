@@ -3,8 +3,9 @@ import { useEffect } from "react";
 import {
   buildConnectCommand,
   buildJdbcUrl,
-  buildRdpFile,
   buildSshUrl,
+  buildTargetSubtitle,
+  canBuildRdp,
   copyPlain,
   copySensitive,
   downloadRdpFile,
@@ -42,20 +43,16 @@ export function ConnectDialog({ item, onClose, onUsed, onToast }: Props) {
   const code = engineCode(protocol);
   const proto = protocolLabel(protocol);
 
-  const target = [
-    p.hostname,
-    p.ip,
-    p.port !== undefined ? `${p.hostname || p.ip || ""}:${p.port}` : "",
-    p.username && (p.domain ? `${p.domain}\\${p.username}` : p.username),
-  ]
-    .filter(Boolean)
-    .filter((v, i, arr) => arr.indexOf(v) === i)
-    .join(" · ");
+  const target = buildTargetSubtitle(p);
 
   const jdbcUrl = supportsJdbc(protocol) ? buildJdbcUrl(p) : null;
   const sshUrl = buildSshUrl(p);
   const cmd = buildConnectCommand(p);
-  const canRdp = !!buildRdpFile({ ...p, protocol: "rdp" });
+  // RDP is offered only when the credential is itself an RDP entry. For a
+  // Postgres credential on port 5432 we'd otherwise generate an .rdp file
+  // pointing at port 5432, which doesn't run RDP — that's a bug, not a
+  // feature.
+  const canRdp = canBuildRdp(p);
 
   function done(action: string) {
     onUsed(item!.id);
@@ -66,19 +63,15 @@ export function ConnectDialog({ item, onClose, onUsed, onToast }: Props) {
   async function handleJdbc() {
     if (!jdbcUrl) return;
     await copyPlain(jdbcUrl);
-    if (p.password) {
-      // Queue the password on the clipboard with auto-clear so the user can
-      // paste it into the next field. The plain URL was just overwritten by
-      // copySensitive's writeText, but that's the desired ordering — the
-      // user pastes the URL first into DBeaver, then "Copy" again on the
-      // next field grabs the password (we explicitly switched). For now we
-      // give them the URL only and let them re-trigger via Copy buttons.
-    }
-    done(`JDBC URL copied · ${jdbcUrl}`);
+    done("JDBC URL copied · use the row's Copy button for the password");
   }
 
   async function handleSsh() {
     if (!sshUrl) return;
+    // Copy the password first (so it's on the clipboard when the SSH client
+    // prompts for it), then launch the URL handler. If we launched first,
+    // the synthetic anchor click could race with the writeText call in
+    // browsers that suspend the page on protocol-handler invocation.
     if (p.password) await copySensitive(p.password);
     launchSshUrl(sshUrl);
     done("Launching SSH · password on clipboard, clears in 30 s");
@@ -86,15 +79,19 @@ export function ConnectDialog({ item, onClose, onUsed, onToast }: Props) {
 
   async function handleCommand() {
     if (!cmd) return;
+    // Copy the command alone. We deliberately do NOT also copy the password
+    // here — the second writeText would overwrite the command, leaving the
+    // user's clipboard holding the password they expected to paste a command
+    // from. The row's per-row Copy button is the password path.
     await copyPlain(cmd);
-    if (p.password) await copySensitive(p.password);
-    done("Connect command copied · password on clipboard");
+    done("Connect command copied · use the row's Copy button for the password");
   }
 
   async function handleRdp() {
-    const ok = downloadRdpFile({ ...p, protocol: "rdp" });
+    if (!canRdp) return;
+    const ok = downloadRdpFile(p);
     if (!ok) {
-      onToast("Add hostname + RDP port to enable RDP");
+      onToast("Add hostname or IP to this credential");
       return;
     }
     if (p.password) await copySensitive(p.password);
@@ -147,7 +144,7 @@ export function ConnectDialog({ item, onClose, onUsed, onToast }: Props) {
             icon={<IconCopy />}
             title="Copy connect command"
             meta={cmd ?? "No canonical command for this protocol"}
-            hint="Ready-to-paste shell command · password also on clipboard"
+            hint="Ready-to-paste shell command · use the row's Copy button for the password"
             cta="Copy"
             onClick={handleCommand}
           />
@@ -159,7 +156,9 @@ export function ConnectDialog({ item, onClose, onUsed, onToast }: Props) {
             meta={
               canRdp
                 ? `${p.hostname || p.ip}:${p.port ?? 3389}`
-                : "Add hostname or IP to enable"
+                : protocol === "rdp"
+                  ? "Add hostname or IP to enable"
+                  : "Set protocol to RDP on this credential to enable"
             }
             hint="Downloads a pre-filled .rdp · password copied to clipboard, paste at the credential prompt"
             cta="Download .rdp"

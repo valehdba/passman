@@ -191,8 +191,21 @@ export function VaultPage() {
 
   function toggleSelectAll() {
     setSelected((s) => {
-      if (s.size === filtered.length) return new Set();
-      return new Set(filtered.map((it) => it.id));
+      // "Are all *visible* rows currently selected?" — not just a size match.
+      // A size match can be coincidental (e.g. you selected items in another
+      // scope, then narrowed the view). The CredentialsGrid component's
+      // header-checkbox visual uses the same `every`-based check, so the
+      // toggle and the indicator stay in sync.
+      const allVisibleSelected =
+        filtered.length > 0 && filtered.every((it) => s.has(it.id));
+      if (allVisibleSelected) {
+        const next = new Set(s);
+        for (const it of filtered) next.delete(it.id);
+        return next;
+      }
+      const next = new Set(s);
+      for (const it of filtered) next.add(it.id);
+      return next;
     });
   }
 

@@ -17,11 +17,21 @@ export function buildSshUrl(item: VaultLoginPlaintext): string | null {
 /**
  * Trigger the OS's `ssh://` handler. Some browsers gate this behind a user
  * prompt the first time — that's fine, that prompt only fires once per
- * origin/scheme. We use `location.href` (rather than a `<a target="_blank">`)
- * so the navigation stays in the existing tab.
+ * origin/scheme.
+ *
+ * Implementation notes: assigning `location.href` to a custom-scheme URL is
+ * unreliable in Chromium — if no handler is registered, Chrome navigates the
+ * tab to an "ERR_UNKNOWN_URL_SCHEME" error page, throwing the user out of
+ * the app. The synthetic-anchor-click pattern below is what 1Password and
+ * Bitwarden use: the click handler invokes the protocol handler if present
+ * and is a silent no-op otherwise.
  */
 export function launchSshUrl(url: string): void {
-  // Assigning to location.href triggers the protocol handler without
-  // creating an extra history entry that the user would have to back out of.
-  window.location.href = url;
+  const a = document.createElement("a");
+  a.href = url;
+  a.rel = "noopener";
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }
