@@ -125,7 +125,7 @@
               <div class="name-cell">
                 <span class="engine-tile e-psql">PG</span>
                 <div class="name-block">
-                  <div class="name">prod-pg-primary</div>
+                  <div class="name-row"><span class="name">prod-pg-primary</span></div>
                   <span class="url">postgres://db-prod-01:5432/app</span>
                 </div>
               </div>
@@ -149,7 +149,7 @@
               <div class="name-cell">
                 <span class="engine-tile e-ssh">SSH</span>
                 <div class="name-block">
-                  <div class="name">prod-pg-replica</div>
+                  <div class="name-row"><span class="name">prod-pg-replica</span></div>
                   <span class="url">ssh://postgres@db-prod-02:22</span>
                 </div>
               </div>
@@ -173,7 +173,10 @@
               <div class="name-cell">
                 <span class="engine-tile e-rdp">RDP</span>
                 <div class="name-block">
-                  <div class="name">oracle-erp-bastion</div>
+                  <div class="name-row">
+                    <span class="name">oracle-erp-bastion</span>
+                    <span class="storage-badge" title="Stored on this device only">Device</span>
+                  </div>
                   <span class="url">rdp://erp-db-01.example.az:3389</span>
                 </div>
               </div>
@@ -197,7 +200,7 @@
               <div class="name-cell">
                 <span class="engine-tile e-mysql">MY</span>
                 <div class="name-block">
-                  <div class="name">mysql-reporting</div>
+                  <div class="name-row"><span class="name">mysql-reporting</span></div>
                   <span class="url">mysql://rpt-db-01:3306/reports</span>
                 </div>
               </div>
@@ -221,7 +224,7 @@
               <div class="name-cell">
                 <span class="engine-tile e-redis">RD</span>
                 <div class="name-block">
-                  <div class="name">redis-cache</div>
+                  <div class="name-row"><span class="name">redis-cache</span></div>
                   <span class="url">rediss://cache-01:6379</span>
                 </div>
               </div>
@@ -245,7 +248,7 @@
               <div class="name-cell">
                 <span class="engine-tile e-mongo">MG</span>
                 <div class="name-block">
-                  <div class="name">mongo-shard-a</div>
+                  <div class="name-row"><span class="name">mongo-shard-a</span></div>
                   <span class="url">mongodb://mongo-01:27017</span>
                 </div>
               </div>

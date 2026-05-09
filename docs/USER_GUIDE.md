@@ -238,6 +238,36 @@ The form is **protocol-aware**:
 Empty fields are stripped before encryption, so the ciphertext stays
 small and forward-compatible.
 
+### 5a. Store on this device only
+
+For credentials you don't want stored remotely **even encrypted**, the
+form has a **Store on this device only** toggle below the URL field.
+When ticked:
+
+- The encrypted ciphertext is written to **IndexedDB** in this browser
+  (using the same vault key, so locking the vault still locks the local
+  items).
+- Nothing about the credential — not even the ciphertext — touches
+  the server.
+- Items appear in the grid with a green **DEVICE** badge next to the
+  name, so you can tell at a glance which credentials are local-only.
+
+> ⚠️ **The trade-offs are real.** A local-only credential:
+>
+> - Does **not sync** to other devices or browsers.
+> - Is **wiped** if you clear site data, "Reset to defaults", or the OS
+>   user profile is deleted.
+> - Has **no off-device backup** — if this disk dies, the credential
+>   dies with it.
+>
+> Use device-only storage for items where the security benefit
+> ("never on a server, even encrypted") outweighs the convenience cost
+> ("only on this machine"). Most credentials should stay on the
+> server-default for the sync + backup guarantees.
+
+The toggle defaults to off, so existing zero-knowledge guarantees apply
+to everyone who doesn't opt in.
+
 ---
 
 ## 6. Chrome extension

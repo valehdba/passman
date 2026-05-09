@@ -103,6 +103,19 @@
             </label>
           </div>
 
+          <label class="storage-toggle on">
+            <input type="checkbox" checked />
+            <span class="storage-toggle-body">
+              <span class="storage-toggle-title">Store on this device only</span>
+              <span class="storage-toggle-hint">
+                Encrypted ciphertext stays in this browser's IndexedDB · never sent to the server.<br />
+                <strong>No cross-device sync</strong> · cleared if you clear site data ·
+                single point of failure if this disk dies. Use for credentials you never
+                want stored remotely, even encrypted.
+              </span>
+            </span>
+          </label>
+
           <div class="add-form-actions">
             <button type="submit">Save</button>
             <button type="button">Cancel</button>

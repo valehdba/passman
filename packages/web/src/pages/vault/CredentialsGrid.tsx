@@ -140,8 +140,16 @@ function Row({
           {engineCode(protocol)}
         </span>
         <div className="name-block">
-          <div className="name" title={p.name}>
-            {p.name}
+          <div className="name-row">
+            <span className="name" title={p.name}>{p.name}</span>
+            {item.location === "local" && (
+              <span
+                className="storage-badge"
+                title="Stored on this device only — never sent to the server"
+              >
+                Device
+              </span>
+            )}
           </div>
           {p.url && (
             <span className="url" title={p.url}>

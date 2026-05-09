@@ -12,6 +12,12 @@ import {
   effectiveProtocol,
   protocolLabel,
 } from "../connect/index.js";
+import {
+  createItem as createStored,
+  deleteItem as deleteStored,
+  listAll as listAllStored,
+  type StorageLocation,
+} from "../storage/index.js";
 import { useSession } from "../stores/session.js";
 import { AddCredentialForm } from "./vault/AddCredentialForm.js";
 import { ConnectDialog } from "./vault/ConnectDialog.js";
@@ -104,13 +110,13 @@ export function VaultPage() {
   }
 
   async function loadItems() {
-    if (!accessToken || !vault) return;
+    if (!accessToken || !vault || !email) return;
     setLoading(true);
     setError(null);
     try {
-      const { items: encrypted } = await api.listItems(accessToken);
+      const located = await listAllStored(accessToken, email);
       const decoded = await Promise.all(
-        encrypted.map(async (it) => ({
+        located.map(async (it) => ({
           ...it,
           plaintext: await decryptVaultLogin(it.encrypted_data, vault),
         })),
@@ -123,16 +129,26 @@ export function VaultPage() {
     }
   }
 
-  async function onAdd(plaintext: VaultLoginPlaintext) {
-    if (!accessToken || !vault) return;
+  async function onAdd(
+    plaintext: VaultLoginPlaintext,
+    location: StorageLocation,
+  ) {
+    if (!accessToken || !vault || !email) return;
     const encoded = await encryptVaultLogin(plaintext, vault);
-    await api.createItem(accessToken, {
+    await createStored({
+      accessToken,
+      vault: email,
       item_type: encoded.itemType,
       encrypted_data: encoded.encryptedData,
+      location,
     });
     setAdding(false);
     await loadItems();
-    showToast("Credential added");
+    showToast(
+      location === "local"
+        ? "Credential added — stored on this device only"
+        : "Credential added",
+    );
   }
 
   async function onLogout() {
@@ -149,9 +165,11 @@ export function VaultPage() {
 
   async function onDelete(id: string) {
     if (!accessToken) return;
+    const target = items.find((it) => it.id === id);
+    if (!target) return;
     if (!confirm("Delete this credential?")) return;
     try {
-      await api.deleteItem(accessToken, id);
+      await deleteStored(accessToken, id, target.location);
       setSelected((s) => {
         const next = new Set(s);
         next.delete(id);
@@ -168,13 +186,20 @@ export function VaultPage() {
     if (!accessToken) return;
     if (selected.size === 0) return;
     if (!confirm(`Delete ${selected.size} credential(s)?`)) return;
+    // Map each id to its location so the facade routes to the right store.
+    const byId = new Map(items.map((it) => [it.id, it.location]));
     try {
       await Promise.all(
-        [...selected].map((id) => api.deleteItem(accessToken, id)),
+        [...selected].map((id) => {
+          const loc = byId.get(id);
+          if (!loc) return Promise.resolve();
+          return deleteStored(accessToken, id, loc);
+        }),
       );
+      const count = selected.size;
       setSelected(new Set());
       await loadItems();
-      showToast(`${selected.size} credential(s) deleted`);
+      showToast(`${count} credential(s) deleted`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to delete");
     }
