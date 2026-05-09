@@ -1,8 +1,24 @@
 # Passman
 
-A zero-knowledge password manager. Vault data is encrypted on the client with
-a key derived from your master password, and the server only ever stores
-ciphertext + KDF parameters. A database breach leaks nothing usable.
+A zero-knowledge password manager built for DBAs and infrastructure teams.
+Vault data is encrypted on the client with a key derived from your master
+password, and the server only ever stores ciphertext + KDF parameters. A
+database breach leaks nothing usable.
+
+![Passman vault dashboard](docs/img/vault.png)
+
+The vault treats credentials as connection targets, not just `name +
+password` rows: every entry carries protocol, hostname, IP, port, and
+optional service-name / Windows-domain / database fields. One click on
+**Connect →** turns a saved credential into a working session — a JDBC
+URL for DBeaver / DataGrip / DBVisualizer, a launched SSH terminal, a
+ready-to-paste `psql` / `mysql` / `sqlplus` command, or a downloadable
+`.rdp` file. The password lands on the clipboard with a 30-second
+auto-clear; the server still sees only ciphertext.
+
+![Connect dialog with JDBC, SSH, copy-command, and RDP options](docs/img/vault-connect.png)
+
+## Architecture at a glance
 
 ```
 ┌─────────────────┐  auth_key (one-way)   ┌───────────────────┐
