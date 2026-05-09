@@ -32,6 +32,12 @@ export interface VaultLoginPlaintext {
   username: string;
   password: string;
   url?: string;
+  /** DNS name or short host alias (e.g. "db-prod-01"). */
+  hostname?: string;
+  /** IPv4 / IPv6 address of the target host. */
+  ip?: string;
+  /** TCP/UDP port the credential authenticates against (e.g. 5432). */
+  port?: number;
   notes?: string;
   /** otpauth:// URI for TOTP, optional. */
   totp?: string;
