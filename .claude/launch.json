@@ -6,6 +6,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["docs/preview/server.mjs"],
       "port": 4173
+    },
+    {
+      "name": "passman-web-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--workspace=@passman/web"],
+      "port": 5173
     }
   ]
 }

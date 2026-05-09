@@ -38,6 +38,7 @@ export {
   DEFAULT_KDF_PARAMS,
   type EncryptedBlob,
   type KdfParams,
+  type Protocol,
   type VaultItemType,
   type VaultLoginPlaintext,
 } from "./types.js";

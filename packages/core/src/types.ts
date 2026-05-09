@@ -26,6 +26,24 @@ export const DEFAULT_KDF_PARAMS: Omit<KdfParams, "salt"> = Object.freeze({
   parallelism: 4,
 });
 
+/**
+ * Connect protocol declared on a credential. Drives which actions appear in
+ * the Connect dialog (JDBC / SSH / RDP / copy-command). Optional — if absent
+ * the UI falls back to inferring from the port.
+ */
+export type Protocol =
+  | "ssh"
+  | "rdp"
+  | "psql"
+  | "mysql"
+  | "mariadb"
+  | "oracle"
+  | "mssql"
+  | "redis"
+  | "mongo"
+  | "https"
+  | "other";
+
 /** Plaintext schema for a stored login (encrypted before the server ever sees it). */
 export interface VaultLoginPlaintext {
   name: string;
@@ -38,6 +56,16 @@ export interface VaultLoginPlaintext {
   ip?: string;
   /** TCP/UDP port the credential authenticates against (e.g. 5432). */
   port?: number;
+  /** Connect protocol — drives the Connect dialog options. */
+  protocol?: Protocol;
+  /** Database name (Postgres, MySQL, MariaDB, Mongo, SQL Server). */
+  database?: string;
+  /** Oracle SERVICE_NAME (or SID for legacy `host:port:sid` style). */
+  serviceName?: string;
+  /** Windows AD domain (RDP only). */
+  domain?: string;
+  /** Free-form environment label shown as a row tag (e.g. "prod", "staging"). */
+  environment?: string;
   notes?: string;
   /** otpauth:// URI for TOTP, optional. */
   totp?: string;

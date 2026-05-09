@@ -7,136 +7,265 @@
     <link rel="stylesheet" href="../../packages/web/src/styles.css" />
   </head>
   <body>
-    <main class="vault-container">
-      <header>
-        <h1>Vault</h1>
-        <button>Lock & sign out</button>
-      </header>
+    <div class="vault-app">
+      <!-- ============================== Sidebar ============================== -->
+      <aside class="vault-side">
+        <div class="brand">
+          <div class="brand-mark"></div> Passman
+        </div>
 
-      <div class="vault-toolbar">
-        <input type="search" class="vault-search" placeholder="Search hostname, IP, user, name…" aria-label="Search credentials" />
-        <label class="vault-group-label">
-          Group by
-          <select>
-            <option>No grouping</option>
-            <option>Hostname</option>
-            <option>IP address</option>
-            <option>User</option>
-            <option>Port</option>
-          </select>
-        </label>
-        <button>+ Add login</button>
-      </div>
+        <div class="side-search">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input placeholder="Filter views…" />
+        </div>
 
-      <section class="vault-group">
-        <div class="vault-grid" role="table">
-          <div class="vault-grid-row vault-grid-head" role="row">
-            <span role="columnheader">Name</span>
-            <span role="columnheader">Hostname</span>
-            <span role="columnheader">IP address</span>
-            <span role="columnheader">User</span>
-            <span role="columnheader">Password</span>
-            <span role="columnheader">Port</span>
-            <span role="columnheader" aria-label="Actions"></span>
-          </div>
-
-          <div class="vault-grid-row" role="row">
-            <span role="cell" data-col="Name"><strong>prod-pg-primary</strong></span>
-            <span role="cell" data-col="Hostname">db-prod-01</span>
-            <span role="cell" data-col="IP">10.0.0.42</span>
-            <span role="cell" data-col="User">postgres</span>
-            <span role="cell" data-col="Password" class="vault-pw-cell">
-              <code>••••••••</code>
-              <button type="button" class="vault-icon-btn">Show</button>
-              <button type="button" class="vault-icon-btn">Copy</button>
-            </span>
-            <span role="cell" data-col="Port">5432</span>
-            <span role="cell" class="vault-actions">
-              <button type="button" class="vault-icon-btn vault-danger">Delete</button>
-            </span>
-          </div>
-
-          <div class="vault-grid-row" role="row">
-            <span role="cell" data-col="Name"><strong>prod-pg-replica</strong></span>
-            <span role="cell" data-col="Hostname">db-prod-02</span>
-            <span role="cell" data-col="IP">10.0.0.43</span>
-            <span role="cell" data-col="User">replicator</span>
-            <span role="cell" data-col="Password" class="vault-pw-cell">
-              <code>••••••••</code>
-              <button type="button" class="vault-icon-btn">Show</button>
-              <button type="button" class="vault-icon-btn">Copy</button>
-            </span>
-            <span role="cell" data-col="Port">5432</span>
-            <span role="cell" class="vault-actions">
-              <button type="button" class="vault-icon-btn vault-danger">Delete</button>
-            </span>
-          </div>
-
-          <div class="vault-grid-row" role="row">
-            <span role="cell" data-col="Name"><strong>oracle-erp</strong></span>
-            <span role="cell" data-col="Hostname">erp-db-01</span>
-            <span role="cell" data-col="IP">10.0.1.10</span>
-            <span role="cell" data-col="User">sys</span>
-            <span role="cell" data-col="Password" class="vault-pw-cell">
-              <code>••••••••</code>
-              <button type="button" class="vault-icon-btn">Show</button>
-              <button type="button" class="vault-icon-btn">Copy</button>
-            </span>
-            <span role="cell" data-col="Port">1521</span>
-            <span role="cell" class="vault-actions">
-              <button type="button" class="vault-icon-btn vault-danger">Delete</button>
-            </span>
-          </div>
-
-          <div class="vault-grid-row" role="row">
-            <span role="cell" data-col="Name"><strong>mysql-reporting</strong></span>
-            <span role="cell" data-col="Hostname">rpt-db-01</span>
-            <span role="cell" data-col="IP">10.0.2.21</span>
-            <span role="cell" data-col="User">analytics</span>
-            <span role="cell" data-col="Password" class="vault-pw-cell">
-              <code>P@ssM4nDemo!</code>
-              <button type="button" class="vault-icon-btn">Hide</button>
-              <button type="button" class="vault-icon-btn">Copy</button>
-            </span>
-            <span role="cell" data-col="Port">3306</span>
-            <span role="cell" class="vault-actions">
-              <button type="button" class="vault-icon-btn vault-danger">Delete</button>
-            </span>
-          </div>
-
-          <div class="vault-grid-row" role="row">
-            <span role="cell" data-col="Name"><strong>redis-cache</strong></span>
-            <span role="cell" data-col="Hostname">cache-01</span>
-            <span role="cell" data-col="IP">10.0.3.5</span>
-            <span role="cell" data-col="User">default</span>
-            <span role="cell" data-col="Password" class="vault-pw-cell">
-              <code>••••••••</code>
-              <button type="button" class="vault-icon-btn">Show</button>
-              <button type="button" class="vault-icon-btn">Copy</button>
-            </span>
-            <span role="cell" data-col="Port">6379</span>
-            <span role="cell" class="vault-actions">
-              <button type="button" class="vault-icon-btn vault-danger">Delete</button>
-            </span>
-          </div>
-
-          <div class="vault-grid-row" role="row">
-            <span role="cell" data-col="Name"><strong>mongo-shard-a</strong></span>
-            <span role="cell" data-col="Hostname">mongo-01</span>
-            <span role="cell" data-col="IP">10.0.4.11</span>
-            <span role="cell" data-col="User">admin</span>
-            <span role="cell" data-col="Password" class="vault-pw-cell">
-              <code>••••••••</code>
-              <button type="button" class="vault-icon-btn">Show</button>
-              <button type="button" class="vault-icon-btn">Copy</button>
-            </span>
-            <span role="cell" data-col="Port">27017</span>
-            <span role="cell" class="vault-actions">
-              <button type="button" class="vault-icon-btn vault-danger">Delete</button>
-            </span>
+        <div>
+          <div class="side-section">Vault</div>
+          <div class="side-list">
+            <button class="side-item active"><span class="left">All credentials</span><span class="count">6</span></button>
           </div>
         </div>
-      </section>
-    </main>
+
+        <div>
+          <div class="side-section">Group · protocol</div>
+          <div class="side-list">
+            <button class="side-item"><span class="left">PSQL</span><span class="count">2</span></button>
+            <button class="side-item"><span class="left">ORACLE</span><span class="count">1</span></button>
+            <button class="side-item"><span class="left">MYSQL</span><span class="count">1</span></button>
+            <button class="side-item"><span class="left">REDIS</span><span class="count">1</span></button>
+            <button class="side-item"><span class="left">MONGO</span><span class="count">1</span></button>
+          </div>
+        </div>
+
+        <div>
+          <div class="side-section">Group · IP address</div>
+          <div class="side-list">
+            <button class="side-item"><span class="left"><span class="ip-dot"></span>10.0.0.42</span><span class="count">1</span></button>
+            <button class="side-item"><span class="left"><span class="ip-dot"></span>10.0.0.43</span><span class="count">1</span></button>
+            <button class="side-item"><span class="left"><span class="ip-dot"></span>10.0.1.10</span><span class="count">1</span></button>
+            <button class="side-item"><span class="left"><span class="ip-dot"></span>10.0.2.21</span><span class="count">1</span></button>
+            <button class="side-item"><span class="left"><span class="ip-dot"></span>10.0.3.5</span><span class="count">1</span></button>
+            <button class="side-item"><span class="left"><span class="ip-dot"></span>10.0.4.11</span><span class="count">1</span></button>
+          </div>
+        </div>
+
+        <div>
+          <div class="side-section">Group · port</div>
+          <div class="side-list">
+            <button class="side-item"><span class="left">5432</span><span class="count">2</span></button>
+            <button class="side-item"><span class="left">1521</span><span class="count">1</span></button>
+            <button class="side-item"><span class="left">3306</span><span class="count">1</span></button>
+            <button class="side-item"><span class="left">6379</span><span class="count">1</span></button>
+            <button class="side-item"><span class="left">27017</span><span class="count">1</span></button>
+          </div>
+        </div>
+
+        <div class="user-card">
+          <div class="avatar">VA</div>
+          <div class="who">
+            <div class="email">ops@example.az</div>
+            <small>Vault unlocked</small>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ============================== Main ============================== -->
+      <main class="vault-main">
+        <div class="vault-topbar">
+          <div class="crumbs"><strong>Vault</strong><span class="sep">/</span>All credentials</div>
+          <div class="top-spacer"></div>
+          <span class="pill">Zero-knowledge</span>
+          <button class="btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Lock
+          </button>
+        </div>
+
+        <div class="vault-headrow">
+          <div>
+            <h1>All credentials</h1>
+            <p class="sub">
+              <span>6 entries</span>
+              <span class="dot"></span>
+              <span>6 hostnames</span>
+              <span class="dot"></span>
+              <span>5 protocols</span>
+              <span class="dot"></span>
+              <span>Decrypted in your browser</span>
+            </p>
+          </div>
+          <button class="btn btn-primary">+ New credential</button>
+        </div>
+
+        <div class="vault-toolbar">
+          <div class="vault-search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input placeholder="Search hostname, IP, user, name…" />
+            <span class="kbd-hint">⌘K</span>
+          </div>
+        </div>
+
+        <div class="grid-panel">
+          <div class="grid">
+            <div class="head cell-check"><span class="check"></span></div>
+            <div class="head sortable sorted">Name <span class="arrow">↑</span></div>
+            <div class="head">Hostname</div>
+            <div class="head">IP</div>
+            <div class="head">User</div>
+            <div class="head">Password</div>
+            <div class="head">Port</div>
+            <div class="head">Protocol</div>
+            <div class="head">Env</div>
+            <div class="head">Last used</div>
+            <div class="head"></div>
+            <div class="head"></div>
+
+            <div class="row">
+              <div class="cell-check"><span class="check"></span></div>
+              <div class="name-cell">
+                <span class="engine-tile e-psql">PG</span>
+                <div class="name-block">
+                  <div class="name">prod-pg-primary</div>
+                  <span class="url">postgres://db-prod-01:5432/app</span>
+                </div>
+              </div>
+              <div class="mono">db-prod-01</div>
+              <div class="mono">10.0.0.42</div>
+              <div class="mono">postgres</div>
+              <div class="pw-cell">
+                <code class="pw">••••••••••••</code>
+                <span class="pw-actions"><button class="icon-btn">Reveal</button><button class="icon-btn">Copy</button></span>
+              </div>
+              <div class="mono">5432</div>
+              <div><span class="proto proto-psql">PSQL</span></div>
+              <div><span class="tag tag-prod">prod</span></div>
+              <div class="last-used">2m ago</div>
+              <div><button class="connect-btn">Connect <span class="arrow">→</span></button></div>
+              <div><button class="kebab">✕</button></div>
+            </div>
+
+            <div class="row">
+              <div class="cell-check"><span class="check"></span></div>
+              <div class="name-cell">
+                <span class="engine-tile e-ssh">SSH</span>
+                <div class="name-block">
+                  <div class="name">prod-pg-replica</div>
+                  <span class="url">ssh://postgres@db-prod-02:22</span>
+                </div>
+              </div>
+              <div class="mono">db-prod-02</div>
+              <div class="mono">10.0.0.43</div>
+              <div class="mono">postgres</div>
+              <div class="pw-cell">
+                <code class="pw">••••••••••••</code>
+                <span class="pw-actions"><button class="icon-btn">Reveal</button><button class="icon-btn">Copy</button></span>
+              </div>
+              <div class="mono">22</div>
+              <div><span class="proto proto-ssh">SSH</span></div>
+              <div><span class="tag tag-prod">prod</span></div>
+              <div class="last-used">1h ago</div>
+              <div><button class="connect-btn">Connect <span class="arrow">→</span></button></div>
+              <div><button class="kebab">✕</button></div>
+            </div>
+
+            <div class="row">
+              <div class="cell-check"><span class="check on"></span></div>
+              <div class="name-cell">
+                <span class="engine-tile e-rdp">RDP</span>
+                <div class="name-block">
+                  <div class="name">oracle-erp-bastion</div>
+                  <span class="url">rdp://erp-db-01.example.az:3389</span>
+                </div>
+              </div>
+              <div class="mono">erp-db-01</div>
+              <div class="mono">10.0.1.10</div>
+              <div class="mono">EXAMPLE\sys</div>
+              <div class="pw-cell">
+                <code class="pw">P@ssM4nDemo!</code>
+                <span class="pw-actions" style="opacity:1"><button class="icon-btn active">Hide</button><button class="icon-btn">Copy</button></span>
+              </div>
+              <div class="mono">3389</div>
+              <div><span class="proto proto-rdp">RDP</span></div>
+              <div><span class="tag tag-prod">prod</span></div>
+              <div class="last-used">3h ago</div>
+              <div><button class="connect-btn">Connect <span class="arrow">→</span></button></div>
+              <div><button class="kebab">✕</button></div>
+            </div>
+
+            <div class="row">
+              <div class="cell-check"><span class="check"></span></div>
+              <div class="name-cell">
+                <span class="engine-tile e-mysql">MY</span>
+                <div class="name-block">
+                  <div class="name">mysql-reporting</div>
+                  <span class="url">mysql://rpt-db-01:3306/reports</span>
+                </div>
+              </div>
+              <div class="mono">rpt-db-01</div>
+              <div class="mono">10.0.2.21</div>
+              <div class="mono">analytics</div>
+              <div class="pw-cell">
+                <code class="pw">••••••••••••</code>
+                <span class="pw-actions"><button class="icon-btn">Reveal</button><button class="icon-btn">Copy</button></span>
+              </div>
+              <div class="mono">3306</div>
+              <div><span class="proto proto-mysql">MYSQL</span></div>
+              <div><span class="tag tag-staging">staging</span></div>
+              <div class="last-used">yesterday</div>
+              <div><button class="connect-btn">Connect <span class="arrow">→</span></button></div>
+              <div><button class="kebab">✕</button></div>
+            </div>
+
+            <div class="row">
+              <div class="cell-check"><span class="check"></span></div>
+              <div class="name-cell">
+                <span class="engine-tile e-redis">RD</span>
+                <div class="name-block">
+                  <div class="name">redis-cache</div>
+                  <span class="url">rediss://cache-01:6379</span>
+                </div>
+              </div>
+              <div class="mono">cache-01</div>
+              <div class="mono">10.0.3.5</div>
+              <div class="mono">default</div>
+              <div class="pw-cell">
+                <code class="pw">••••••••••••</code>
+                <span class="pw-actions"><button class="icon-btn">Reveal</button><button class="icon-btn">Copy</button></span>
+              </div>
+              <div class="mono">6379</div>
+              <div><span class="proto proto-redis">REDIS</span></div>
+              <div><span class="tag tag-cache">cache</span></div>
+              <div class="last-used">3d ago</div>
+              <div><button class="connect-btn">Connect <span class="arrow">→</span></button></div>
+              <div><button class="kebab">✕</button></div>
+            </div>
+
+            <div class="row">
+              <div class="cell-check"><span class="check"></span></div>
+              <div class="name-cell">
+                <span class="engine-tile e-mongo">MG</span>
+                <div class="name-block">
+                  <div class="name">mongo-shard-a</div>
+                  <span class="url">mongodb://mongo-01:27017</span>
+                </div>
+              </div>
+              <div class="mono">mongo-01</div>
+              <div class="mono">10.0.4.11</div>
+              <div class="mono">admin</div>
+              <div class="pw-cell">
+                <code class="pw">••••••••••••</code>
+                <span class="pw-actions"><button class="icon-btn">Reveal</button><button class="icon-btn">Copy</button></span>
+              </div>
+              <div class="mono">27017</div>
+              <div><span class="proto proto-mongo">MONGO</span></div>
+              <div><span class="tag tag-dev">dev</span></div>
+              <div class="last-used">5d ago</div>
+              <div><button class="connect-btn">Connect <span class="arrow">→</span></button></div>
+              <div><button class="kebab">✕</button></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
   </body>
 </html>
