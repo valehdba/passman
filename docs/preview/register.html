@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Passman — Register</title>
+    <link rel="stylesheet" href="../../packages/web/src/styles.css" />
+  </head>
+  <body>
+    <main class="auth-container">
+      <h1>Create your vault</h1>
+      <p class="warning">
+        ⚠️ Your master password is the only key. We can't recover it. If you
+        forget it, your vault is permanently inaccessible.
+      </p>
+      <form>
+        <label>
+          Email
+          <input type="email" value="ops@example.az" />
+        </label>
+        <label>
+          Master password
+          <input type="password" value="............" />
+        </label>
+        <label>
+          Confirm password
+          <input type="password" value="............" />
+        </label>
+        <button type="submit">Create vault</button>
+      </form>
+    </main>
+  </body>
+</html>

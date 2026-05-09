@@ -30,8 +30,9 @@ ciphertext + KDF parameters. A database breach leaks nothing usable.
 | `.github/workflows/`  | CI: lint, typecheck, unit + E2E tests, CodeQL, audits.      |
 | `docs/`               | Architecture and security docs.                             |
 
-Read the full design in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and the
-threat model in [`docs/SECURITY.md`](docs/SECURITY.md).
+Read the full design in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), the
+threat model in [`docs/SECURITY.md`](docs/SECURITY.md), and a screenshot
+walkthrough of every screen in [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md).
 
 ## Installation
 

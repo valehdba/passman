@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "passman-previews",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["docs/preview/server.mjs"],
+      "port": 4173
+    }
+  ]
+}
