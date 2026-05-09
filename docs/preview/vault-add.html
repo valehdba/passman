@@ -3,96 +3,112 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Passman — Vault (add credential)</title>
+    <title>Passman — Add credential</title>
     <link rel="stylesheet" href="../../packages/web/src/styles.css" />
   </head>
   <body>
-    <main class="vault-container">
-      <header>
-        <h1>Vault</h1>
-        <button>Lock & sign out</button>
-      </header>
-
-      <div class="vault-toolbar">
-        <input type="search" class="vault-search" placeholder="Search hostname, IP, user, name…" aria-label="Search credentials" />
-        <label class="vault-group-label">
-          Group by
-          <select>
-            <option>No grouping</option>
-            <option>Hostname</option>
-            <option>IP address</option>
-            <option>User</option>
-            <option>Port</option>
-          </select>
-        </label>
-      </div>
-
-      <section class="vault-group">
-        <div class="vault-grid" role="table">
-          <div class="vault-grid-row vault-grid-head" role="row">
-            <span role="columnheader">Name</span>
-            <span role="columnheader">Hostname</span>
-            <span role="columnheader">IP address</span>
-            <span role="columnheader">User</span>
-            <span role="columnheader">Password</span>
-            <span role="columnheader">Port</span>
-            <span role="columnheader" aria-label="Actions"></span>
-          </div>
-          <div class="vault-grid-row" role="row">
-            <span role="cell" data-col="Name"><strong>prod-pg-primary</strong></span>
-            <span role="cell" data-col="Hostname">db-prod-01</span>
-            <span role="cell" data-col="IP">10.0.0.42</span>
-            <span role="cell" data-col="User">postgres</span>
-            <span role="cell" data-col="Password" class="vault-pw-cell">
-              <code>••••••••</code>
-              <button type="button" class="vault-icon-btn">Show</button>
-              <button type="button" class="vault-icon-btn">Copy</button>
-            </span>
-            <span role="cell" data-col="Port">5432</span>
-            <span role="cell" class="vault-actions">
-              <button type="button" class="vault-icon-btn vault-danger">Delete</button>
-            </span>
+    <div class="vault-app">
+      <aside class="vault-side">
+        <div class="brand"><div class="brand-mark"></div> Passman</div>
+        <div class="side-search">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input placeholder="Filter views…" />
+        </div>
+        <div>
+          <div class="side-section">Vault</div>
+          <div class="side-list">
+            <button class="side-item active"><span class="left">All credentials</span><span class="count">6</span></button>
           </div>
         </div>
-      </section>
+        <div class="user-card">
+          <div class="avatar">VA</div>
+          <div class="who">
+            <div class="email">ops@example.az</div>
+            <small>Vault unlocked</small>
+          </div>
+        </div>
+      </aside>
 
-      <form class="vault-add-form">
-        <h2>New credential</h2>
-        <label>
-          Name
-          <input value="staging-pg" />
-        </label>
-        <div class="vault-form-row">
-          <label>
-            Hostname
-            <input value="db-staging-01" placeholder="db-prod-01" />
-          </label>
-          <label>
-            IP address
-            <input value="10.0.5.12" placeholder="10.0.0.42" />
-          </label>
-          <label>
-            Port
-            <input type="number" value="5432" placeholder="5432" />
-          </label>
+      <main class="vault-main">
+        <div class="vault-headrow">
+          <div>
+            <h1>All credentials</h1>
+            <p class="sub"><span>6 entries</span><span class="dot"></span><span>Decrypted in your browser</span></p>
+          </div>
+          <button class="btn btn-primary">+ New credential</button>
         </div>
-        <label>
-          User
-          <input value="postgres" />
-        </label>
-        <label>
-          Password
-          <input type="password" value="............" />
-        </label>
-        <label>
-          URL
-          <input value="postgres://db-staging-01:5432/app" />
-        </label>
-        <div class="vault-form-actions">
-          <button type="submit">Save</button>
-          <button type="button">Cancel</button>
-        </div>
-      </form>
-    </main>
+
+        <form class="add-form">
+          <h2>New credential</h2>
+
+          <div class="add-form-grid">
+            <label>
+              Name
+              <input value="staging-pg" placeholder="prod-pg-primary" />
+            </label>
+            <label>
+              Protocol
+              <select>
+                <option>— auto-detect from port —</option>
+                <option selected>PostgreSQL</option>
+                <option>MySQL</option>
+                <option>Oracle</option>
+                <option>SSH</option>
+                <option>RDP (Windows Remote Desktop)</option>
+              </select>
+            </label>
+            <label>
+              Environment
+              <input value="staging" placeholder="prod / staging / dev" />
+            </label>
+          </div>
+
+          <div class="add-form-grid">
+            <label>
+              Hostname
+              <input value="db-staging-01" placeholder="db-prod-01" />
+            </label>
+            <label>
+              IP address
+              <input value="10.0.5.12" placeholder="10.0.0.42" />
+            </label>
+            <label>
+              Port
+              <input type="number" value="5432" placeholder="5432" />
+            </label>
+          </div>
+
+          <div class="add-form-grid">
+            <label>
+              User
+              <input value="postgres" placeholder="postgres" />
+            </label>
+            <label>
+              Password
+              <input type="password" value="............" />
+            </label>
+          </div>
+
+          <div class="add-form-grid">
+            <label>
+              Database
+              <input value="app" placeholder="app" />
+            </label>
+          </div>
+
+          <div class="add-form-grid full-row">
+            <label>
+              URL
+              <input value="postgres://db-staging-01:5432/app" placeholder="https://… or postgres://…" />
+            </label>
+          </div>
+
+          <div class="add-form-actions">
+            <button type="submit">Save</button>
+            <button type="button">Cancel</button>
+          </div>
+        </form>
+      </main>
+    </div>
   </body>
 </html>

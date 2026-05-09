@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Passman — Variant B · Aurora</title>
+    <style>
+      :root {
+        --brand: #3ecf8e;
+        --brand-2: #14b884;
+        --violet: #a78bfa;
+        --bg: #0e0f10;
+        --panel: rgba(22, 24, 26, 0.6);
+        --panel-solid: #1a1c1e;
+        --line: rgba(255, 255, 255, 0.07);
+        --line-strong: rgba(255, 255, 255, 0.12);
+        --fg: #ededed;
+        --muted: #8b8b8b;
+        --danger: #f87171;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; background: var(--bg); color: var(--fg); }
+      body {
+        font-family: "Inter", system-ui, sans-serif;
+        font-size: 14px;
+        position: relative;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background:
+          radial-gradient(60% 40% at 80% -10%, rgba(62, 207, 142, 0.18) 0%, transparent 60%),
+          radial-gradient(50% 35% at 10% 5%, rgba(167, 139, 250, 0.12) 0%, transparent 65%),
+          radial-gradient(40% 30% at 50% 110%, rgba(62, 207, 142, 0.08) 0%, transparent 70%);
+      }
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+        background-size: 48px 48px;
+        mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+      }
+
+      .nav {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.95rem 2rem;
+        border-bottom: 1px solid var(--line);
+        background: rgba(14, 15, 16, 0.6);
+        backdrop-filter: blur(14px);
+      }
+      .logo { display: flex; align-items: center; gap: 0.55rem; font-weight: 600; }
+      .logo-mark {
+        width: 22px; height: 22px;
+        border-radius: 6px;
+        background:
+          conic-gradient(from 200deg, var(--brand), var(--violet), var(--brand));
+        box-shadow: 0 0 20px rgba(62, 207, 142, 0.5);
+      }
+      .nav-spacer { flex: 1; }
+      .pill {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.25rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 500;
+        color: var(--brand);
+        background: rgba(62, 207, 142, 0.1);
+        border: 1px solid rgba(62, 207, 142, 0.3);
+      }
+      .pill::before {
+        content: ""; width: 6px; height: 6px; border-radius: 50%;
+        background: var(--brand); box-shadow: 0 0 8px var(--brand);
+      }
+      .btn {
+        font-family: inherit; font-size: 0.85rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 6px;
+        border: 1px solid var(--line-strong);
+        background: rgba(255,255,255,0.03);
+        color: var(--fg); cursor: pointer;
+        backdrop-filter: blur(10px);
+      }
+      .btn-primary {
+        background: linear-gradient(180deg, var(--brand) 0%, var(--brand-2) 100%);
+        color: #062a18;
+        border-color: rgba(62, 207, 142, 0.5);
+        font-weight: 600;
+        box-shadow: 0 4px 18px rgba(62, 207, 142, 0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+      }
+
+      .layout {
+        position: relative;
+        max-width: 1200px;
+        margin: 2.5rem auto;
+        padding: 0 2rem;
+      }
+      .hero-card {
+        position: relative;
+        padding: 1.75rem 2rem;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+        backdrop-filter: blur(8px);
+        margin-bottom: 1.25rem;
+        overflow: hidden;
+      }
+      .hero-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(80% 100% at 90% -10%, rgba(62, 207, 142, 0.18) 0%, transparent 70%);
+        pointer-events: none;
+      }
+      .hero-card h1 {
+        font-size: 1.75rem; margin: 0;
+        letter-spacing: -0.025em;
+        background: linear-gradient(180deg, #fff 0%, #b8b8b8 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .hero-card .meta {
+        margin-top: 0.4rem;
+        color: var(--muted);
+        font-size: 0.9rem;
+        display: flex; gap: 1rem; align-items: center;
+      }
+      .stat {
+        display: inline-flex; align-items: baseline; gap: 0.35rem;
+      }
+      .stat strong { color: var(--fg); font-weight: 600; }
+      .stat .accent { color: var(--brand); }
+
+      .toolbar {
+        display: grid;
+        grid-template-columns: 1fr auto auto auto;
+        gap: 0.6rem;
+        margin-bottom: 1rem;
+      }
+      .search {
+        position: relative;
+      }
+      .search input {
+        width: 100%;
+        padding: 0.6rem 0.95rem 0.6rem 2.4rem;
+        background: var(--panel);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--fg);
+        font-size: 0.9rem;
+      }
+      .search input::placeholder { color: var(--muted); }
+      .search input:focus {
+        outline: none;
+        border-color: var(--brand);
+        box-shadow: 0 0 0 4px rgba(62, 207, 142, 0.12);
+      }
+      .search svg {
+        position: absolute; left: 0.85rem; top: 50%;
+        transform: translateY(-50%); opacity: 0.55;
+      }
+
+      .panel {
+        position: relative;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.005));
+        backdrop-filter: blur(10px);
+        overflow: hidden;
+      }
+      .panel::before {
+        content: "";
+        position: absolute;
+        inset: -1px;
+        border-radius: 14px;
+        padding: 1px;
+        background: linear-gradient(180deg, rgba(62, 207, 142, 0.35) 0%, transparent 50%);
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1.4fr 1.2fr 1fr 1fr 1.6fr 0.55fr 0.7fr;
+        font-size: 0.88rem;
+      }
+      .grid > div {
+        padding: 0.85rem 1.15rem;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .grid > .head {
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .grid .name { font-weight: 600; }
+      .grid .name .dot {
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: var(--brand);
+        margin-right: 0.5rem;
+        box-shadow: 0 0 6px var(--brand);
+      }
+      .row.highlight > div {
+        background: linear-gradient(90deg, rgba(62, 207, 142, 0.1), transparent 30%);
+      }
+      .mono {
+        font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.83rem;
+      }
+      .pw {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 0.82rem;
+        background: rgba(255,255,255,0.03);
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        border: 1px solid var(--line);
+        flex: 1;
+      }
+      .icon-btn {
+        background: transparent;
+        border: 1px solid var(--line-strong);
+        color: var(--muted);
+        padding: 0.2rem 0.55rem;
+        font-size: 0.72rem;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .icon-btn.danger { color: var(--danger); border-color: rgba(248, 113, 113, 0.25); }
+      .row:last-child > div { border-bottom: none; }
+    </style>
+  </head>
+  <body>
+    <nav class="nav">
+      <div class="logo"><div class="logo-mark"></div> Passman</div>
+      <div class="nav-spacer"></div>
+      <span class="pill">Vault unlocked</span>
+      <button class="btn">ops@example.az</button>
+      <button class="btn">Lock</button>
+    </nav>
+
+    <div class="layout">
+      <div class="hero-card">
+        <h1>Your credentials, still on your machine.</h1>
+        <div class="meta">
+          <span class="stat"><strong class="accent">6</strong> entries</span>
+          <span class="stat"><strong>4</strong> hostnames · <strong>4</strong> ports</span>
+          <span class="stat">Last unlocked <strong>just now</strong></span>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input placeholder="Search hostname, IP, user, name…   ⌘K" />
+        </div>
+        <button class="btn">Group: None</button>
+        <button class="btn">Filters</button>
+        <button class="btn btn-primary">+ New credential</button>
+      </div>
+
+      <div class="panel">
+        <div class="grid">
+          <div class="head">Name</div>
+          <div class="head">Hostname</div>
+          <div class="head">IP</div>
+          <div class="head">User</div>
+          <div class="head">Password</div>
+          <div class="head">Port</div>
+          <div class="head"></div>
+
+          <div class="row highlight" style="display: contents;">
+            <div class="name"><span class="dot"></span>prod-pg-primary</div>
+            <div class="mono">db-prod-01</div>
+            <div class="mono">10.0.0.42</div>
+            <div class="mono">postgres</div>
+            <div><code class="pw">P@ssM4nDemo!</code><button class="icon-btn">Hide</button><button class="icon-btn">Copy</button></div>
+            <div class="mono">5432</div>
+            <div><button class="icon-btn danger">Delete</button></div>
+          </div>
+          <div class="row" style="display: contents;">
+            <div class="name"><span class="dot"></span>prod-pg-replica</div>
+            <div class="mono">db-prod-02</div>
+            <div class="mono">10.0.0.43</div>
+            <div class="mono">replicator</div>
+            <div><code class="pw">••••••••••••</code><button class="icon-btn">Reveal</button><button class="icon-btn">Copy</button></div>
+            <div class="mono">5432</div>
+            <div><button class="icon-btn danger">Delete</button></div>
+          </div>
+          <div class="row" style="display: contents;">
+            <div class="name"><span class="dot"></span>oracle-erp</div>
+            <div class="mono">erp-db-01</div>
+            <div class="mono">10.0.1.10</div>
+            <div class="mono">sys</div>
+            <div><code class="pw">••••••••••••</code><button class="icon-btn">Reveal</button><button class="icon-btn">Copy</button></div>
+            <div class="mono">1521</div>
+            <div><button class="icon-btn danger">Delete</button></div>
+          </div>
+          <div class="row" style="display: contents;">
+            <div class="name"><span class="dot"></span>mysql-reporting</div>
+            <div class="mono">rpt-db-01</div>
+            <div class="mono">10.0.2.21</div>
+            <div class="mono">analytics</div>
+            <div><code class="pw">••••••••••••</code><button class="icon-btn">Reveal</button><button class="icon-btn">Copy</button></div>
+            <div class="mono">3306</div>
+            <div><button class="icon-btn danger">Delete</button></div>
+          </div>
+          <div class="row" style="display: contents;">
+            <div class="name"><span class="dot"></span>redis-cache</div>
+            <div class="mono">cache-01</div>
+            <div class="mono">10.0.3.5</div>
+            <div class="mono">default</div>
+            <div><code class="pw">••••••••••••</code><button class="icon-btn">Reveal</button><button class="icon-btn">Copy</button></div>
+            <div class="mono">6379</div>
+            <div><button class="icon-btn danger">Delete</button></div>
+          </div>
+          <div class="row" style="display: contents;">
+            <div class="name"><span class="dot"></span>mongo-shard-a</div>
+            <div class="mono">mongo-01</div>
+            <div class="mono">10.0.4.11</div>
+            <div class="mono">admin</div>
+            <div><code class="pw">••••••••••••</code><button class="icon-btn">Reveal</button><button class="icon-btn">Copy</button></div>
+            <div class="mono">27017</div>
+            <div><button class="icon-btn danger">Delete</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

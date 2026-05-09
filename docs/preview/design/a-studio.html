@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Passman — Variant A · Studio</title>
+    <style>
+      :root {
+        --brand: #3ecf8e;
+        --brand-soft: rgba(62, 207, 142, 0.12);
+        --brand-line: rgba(62, 207, 142, 0.35);
+        --bg: #1c1c1c;
+        --bg-2: #232323;
+        --panel: #1e1e1e;
+        --line: #2a2a2a;
+        --line-strong: #353535;
+        --fg: #ededed;
+        --muted: #8b8b8b;
+        --danger: #f87171;
+        --warn: #fbbf24;
+      }
+      * { box-sizing: border-box; }
+      html, body { background: var(--bg); color: var(--fg); margin: 0; }
+      body {
+        font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 14px;
+        background-image:
+          radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.04) 1px, transparent 0);
+        background-size: 24px 24px;
+      }
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.85rem 1.5rem;
+        border-bottom: 1px solid var(--line);
+        background: rgba(28, 28, 28, 0.7);
+        backdrop-filter: blur(12px);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .logo-mark {
+        width: 22px; height: 22px;
+        border-radius: 6px;
+        background: linear-gradient(135deg, var(--brand) 0%, #14b884 100%);
+        box-shadow: 0 0 16px rgba(62, 207, 142, 0.45);
+      }
+      .nav-spacer { flex: 1; }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.2rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 500;
+        background: var(--brand-soft);
+        color: var(--brand);
+        border: 1px solid var(--brand-line);
+      }
+      .pill::before {
+        content: "";
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: var(--brand);
+        box-shadow: 0 0 8px var(--brand);
+      }
+      .btn {
+        font-family: inherit;
+        font-size: 0.85rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 6px;
+        border: 1px solid var(--line-strong);
+        background: var(--bg-2);
+        color: var(--fg);
+        cursor: pointer;
+      }
+      .btn-primary {
+        background: var(--brand);
+        color: #062a18;
+        border-color: var(--brand);
+        font-weight: 600;
+      }
+      .btn-ghost {
+        background: transparent;
+      }
+
+      .layout {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1.5rem;
+      }
+      .page-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+      }
+      .page-head h1 {
+        font-size: 1.5rem;
+        margin: 0;
+        letter-spacing: -0.02em;
+      }
+      .page-head p {
+        margin: 0.3rem 0 0;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .toolbar {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+      .search {
+        position: relative;
+      }
+      .search input {
+        width: 100%;
+        padding: 0.55rem 0.85rem 0.55rem 2.25rem;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        color: var(--fg);
+        font-size: 0.9rem;
+        font-family: inherit;
+      }
+      .search input::placeholder { color: var(--muted); }
+      .search svg {
+        position: absolute;
+        left: 0.7rem;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0.55;
+      }
+      .group-select {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 0 0.7rem;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .group-select select {
+        background: transparent;
+        border: none;
+        color: var(--fg);
+        font-family: inherit;
+        font-size: 0.85rem;
+        padding: 0.5rem 0.25rem 0.5rem 0;
+        outline: none;
+      }
+
+      .panel {
+        background: linear-gradient(180deg, rgba(255,255,255,0.015) 0%, transparent 100%), var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1.4fr 1.2fr 1fr 1fr 1.6fr 0.55fr 0.7fr;
+        font-size: 0.88rem;
+      }
+      .grid > div {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .grid > .head {
+        background: rgba(255, 255, 255, 0.015);
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        padding-top: 0.6rem; padding-bottom: 0.6rem;
+      }
+      .grid .name { font-weight: 600; }
+      .grid .name .dot {
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: var(--brand);
+        margin-right: 0.5rem;
+        box-shadow: 0 0 6px var(--brand);
+      }
+      .mono {
+        font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.83rem;
+      }
+      .pw {
+        font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.82rem;
+        background: rgba(255,255,255,0.03);
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        border: 1px solid var(--line);
+        flex: 1;
+      }
+      .icon-btn {
+        background: transparent;
+        border: 1px solid var(--line-strong);
+        color: var(--muted);
+        padding: 0.2rem 0.5rem;
+        font-size: 0.72rem;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .icon-btn:hover { color: var(--fg); border-color: var(--line-strong); }
+      .icon-btn.danger { color: var(--danger); border-color: rgba(248, 113, 113, 0.25); }
+
+      .row:last-child > div { border-bottom: none; }
+      .row:hover > div { background: rgba(62, 207, 142, 0.025); }
+
+      .footnote {
+        margin-top: 0.85rem;
+        color: var(--muted);
+        font-size: 0.78rem;
+        display: flex;
+        gap: 1.25rem;
+        align-items: center;
+      }
+      kbd {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 0.7rem;
+        padding: 0.1rem 0.4rem;
+        border: 1px solid var(--line-strong);
+        border-radius: 4px;
+        background: var(--bg-2);
+        color: var(--fg);
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav">
+      <div class="logo"><div class="logo-mark"></div> Passman</div>
+      <div class="nav-spacer"></div>
+      <span class="pill">Vault unlocked</span>
+      <button class="btn btn-ghost">ops@example.az</button>
+      <button class="btn">Lock</button>
+    </nav>
+
+    <div class="layout">
+      <div class="page-head">
+        <div>
+          <h1>Credentials</h1>
+          <p>6 entries · all decrypted locally · zero-knowledge</p>
+        </div>
+        <button class="btn btn-primary">+ New credential</button>
+      </div>
+
+      <div class="toolbar">
+        <div class="search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input placeholder="Search hostname, IP, user, name…   ⌘K" />
+        </div>
+        <div class="group-select">
+          Group by
+          <select><option>None</option><option>Hostname</option><option>IP</option><option>User</option><option>Port</option></select>
+        </div>
+        <button class="btn">Filters</button>
+      </div>
+
+      <div class="panel">
+        <div class="grid">
+          <div class="head">Name</div>
+          <div class="head">Hostname</div>
+          <div class="head">IP</div>
+          <div class="head">User</div>
+          <div class="head">Password</div>
+          <div class="head">Port</div>
+          <div class="head"></div>
+
+          <div class="row" style="display: contents;">
+            <div class="name"><span class="dot"></span>prod-pg-primary</div>
+            <div class="mono">db-prod-01</div>
+            <div class="mono">10.0.0.42</div>
+            <div class="mono">postgres</div>
+            <div><code class="pw">••••••••••••</code><button class="icon-btn">Reveal</button><button class="icon-btn">Copy</button></div>
+            <div class="mono">5432</div>
+            <div><button class="icon-btn danger">Delete</button></div>
+          </div>
+
+          <div class="row" style="display: contents;">
+            <div class="name"><span class="dot"></span>prod-pg-replica</div>
+            <div class="mono">db-prod-02</div>
+            <div class="mono">10.0.0.43</div>
+            <div class="mono">replicator</div>
+            <div><code class="pw">••••••••••••</code><button class="icon-btn">Reveal</button><button class="icon-btn">Copy</button></div>
+            <div class="mono">5432</div>
+            <div><button class="icon-btn danger">Delete</button></div>
+          </div>
+
+          <div class="row" style="display: contents;">
+            <div class="name"><span class="dot"></span>oracle-erp</div>
+            <div class="mono">erp-db-01</div>
+            <div class="mono">10.0.1.10</div>
+            <div class="mono">sys</div>
+            <div><code class="pw">P@ssM4nDemo!</code><button class="icon-btn">Hide</button><button class="icon-btn">Copy</button></div>
+            <div class="mono">1521</div>
+            <div><button class="icon-btn danger">Delete</button></div>
+          </div>
+
+          <div class="row" style="display: contents;">
+            <div class="name"><span class="dot"></span>mysql-reporting</div>
+            <div class="mono">rpt-db-01</div>
+            <div class="mono">10.0.2.21</div>
+            <div class="mono">analytics</div>
+            <div><code class="pw">••••••••••••</code><button class="icon-btn">Reveal</button><button class="icon-btn">Copy</button></div>
+            <div class="mono">3306</div>
+            <div><button class="icon-btn danger">Delete</button></div>
+          </div>
+
+          <div class="row" style="display: contents;">
+            <div class="name"><span class="dot"></span>redis-cache</div>
+            <div class="mono">cache-01</div>
+            <div class="mono">10.0.3.5</div>
+            <div class="mono">default</div>
+            <div><code class="pw">••••••••••••</code><button class="icon-btn">Reveal</button><button class="icon-btn">Copy</button></div>
+            <div class="mono">6379</div>
+            <div><button class="icon-btn danger">Delete</button></div>
+          </div>
+
+          <div class="row" style="display: contents;">
+            <div class="name"><span class="dot"></span>mongo-shard-a</div>
+            <div class="mono">mongo-01</div>
+            <div class="mono">10.0.4.11</div>
+            <div class="mono">admin</div>
+            <div><code class="pw">••••••••••••</code><button class="icon-btn">Reveal</button><button class="icon-btn">Copy</button></div>
+            <div class="mono">27017</div>
+            <div><button class="icon-btn danger">Delete</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footnote">
+        <span>Press <kbd>⌘K</kbd> to search · <kbd>N</kbd> to add · <kbd>L</kbd> to lock</span>
+        <span style="margin-left:auto">Server sees ciphertext only.</span>
+      </div>
+    </div>
+  </body>
+</html>

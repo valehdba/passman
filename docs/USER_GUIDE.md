@@ -1,8 +1,8 @@
 # Passman — User guide
 
 This guide walks through every screen of the Passman web vault and the
-companion Chrome extension, from creating a vault to autofilling a saved
-credential.
+companion Chrome extension, from creating a vault through connecting to
+a database with one click.
 
 > **Zero-knowledge reminder.** The screens below all run client-side. The
 > server only ever sees ciphertext + your KDF parameters. Your master
@@ -61,88 +61,186 @@ or password."*
 
 ---
 
-## 3. The vault — main grid
+## 3. The vault dashboard
 
-After unlocking you land on the vault grid, optimised for
-infrastructure credentials (DBs, hosts, services):
+After unlocking you land on the vault dashboard:
 
-![Vault — default grid view](img/vault.png)
+![Vault dashboard with sidebar groupings, engine-coloured rows, env tags, and per-row Connect button](img/vault.png)
 
-Each row shows:
+The screen has three regions.
 
-| Column        | What it holds                                          |
-| ------------- | ------------------------------------------------------ |
-| **Name**      | Friendly label (e.g. `prod-pg-primary`).               |
-| **Hostname**  | DNS name or short alias (e.g. `db-prod-01`).           |
-| **IP address**| IPv4 / IPv6 address of the host.                       |
-| **User**      | Account name (e.g. `postgres`, `sys`).                 |
-| **Password**  | Masked by default. **Show / Hide** + **Copy** buttons. |
-| **Port**      | Service port (e.g. `5432`, `1521`).                    |
-| **Actions**   | Per-row **Delete**.                                    |
+### 3a. Sidebar (left)
 
-All values are decrypted in-browser after sign-in; the server never sees
-plaintext.
+The sidebar exposes how you actually work:
 
-### 3a. Search
+- **Filter views…** — filter the sidebar items themselves (handy when
+  you have hundreds of hosts).
+- **All credentials** — the unfiltered view.
+- **Group · protocol** — every protocol present in your vault becomes a
+  one-click filter (`PSQL`, `ORACLE`, `MYSQL`, `REDIS`, `MONGO`, `SSH`,
+  `RDP`, …). Click `PSQL` and the grid shows only Postgres entries.
+- **Group · IP address** — every distinct IP, with a count.
+- **Group · port** — every distinct port (`5432`, `3306`, `1521`, …).
+- **User card** — your email + an "unlocked" indicator.
 
-Type into the search box at the top of the page. The grid filters in
-real time across **name, hostname, IP, user, port, URL and notes** —
-case-insensitive substring match, performed locally on already-decrypted
-items. Nothing about your query reaches the server.
+Sidebar clicks act as **scope filters** that compose with the search
+box. If you click `10.0.0.42` and then type `replica`, you'll see only
+items that match *both*.
 
-![Vault — filtered by search query "prod"](img/vault-search.png)
+The breadcrumb (`Vault / IP : 10.0.0.42`) and a **Clear group** button
+appear once a sidebar scope is active.
 
-### 3b. Group by
+### 3b. Main grid (right)
 
-Use the **Group by** dropdown to bucket rows under a section heading.
-Available keys: `Hostname`, `IP address`, `User`, `Port`. Items missing
-the chosen field land in `(unspecified)`.
+Each row carries:
 
-![Vault — grouped by IP address](img/vault-grouped.png)
+| Column        | What it holds                                                            |
+| ------------- | ------------------------------------------------------------------------ |
+| Checkbox      | Multi-select for bulk actions.                                           |
+| **Name**      | Friendly label + an **engine tile** (PG / OR / MY / RD / MG / SSH / RDP) |
+|               | and a connection-string subtitle (`postgres://db-prod-01:5432/app`).     |
+| **Hostname**  | DNS name. Click to copy.                                                 |
+| **IP**        | IPv4/IPv6 with tabular numerals so digits align.                         |
+| **User**      | Account name (e.g. `postgres`, `EXAMPLE\sys`).                           |
+| **Password**  | Masked. **Reveal** / **Copy** appear on hover; clipboard auto-clears.    |
+| **Port**      | Right-aligned tabular number.                                            |
+| **Protocol**  | Mono pill — colour-coded so you can scan a long list and spot SSH       |
+|               | bastions among the database creds.                                       |
+| **Env**       | Free-form environment tag (`prod`, `staging`, `dev`, `cache`).           |
+| **Last used** | Relative time (`2m ago`, `yesterday`, `5d ago`). Stored locally; never   |
+|               | sent to the server.                                                      |
+| **Connect**   | Always-visible primary action — opens the Connect dialog ([§4](#4-connect)). |
+| **✕**         | Per-row delete with confirmation.                                        |
 
-### 3c. Add a new credential
+#### Search and selection
 
-Click **+ Add login** to open the inline form below the grid.
+- **Search** filters in real time across name, hostname, IP, user, port,
+  protocol, URL, notes, database, service name, domain, and environment.
+  Entirely in-browser — your query never reaches the server.
+  Press **⌘K** / **Ctrl+K** to focus the search at any time.
+- **Select** rows via the per-row checkbox or the header checkbox
+  (selects all *currently visible* rows). A green selection toolbar
+  appears with a `Delete` action; **Clear selection** dismisses it.
 
-![Vault — add credential form](img/vault-add.png)
+### 3c. Header bar
 
-- **Name** and **Password** are required. Everything else is optional —
-  empty fields are stripped before encryption so the ciphertext stays
-  small.
-- **Port** accepts `0–65535`. It's stored as a number, so grouping and
-  numeric search both work.
-- **URL** is free-form; keep it for browser autofill (e.g.
-  `https://app.example.com/login`) or as a connection string for DB
-  tooling.
-
-Click **Save**. The form encrypts the JSON payload with your symmetric
-key, sends only the ciphertext to `POST /api/vault/items`, and the new
-row appears in the grid after a refresh.
-
-### 3d. Reveal & copy a password
-
-In the **Password** column:
-
-- **Show** flips the cell from `••••••••` to the cleartext value
-  (in-page only — toggling **Hide** masks it again).
-- **Copy** writes the password to the system clipboard. Most browsers
-  clear the clipboard automatically after a short period.
-
-### 3e. Delete a row
-
-The red **Delete** button on the right asks for confirmation, then
-issues `DELETE /api/vault/items/<id>`. The server has no way to
-recover deleted ciphertext.
-
-### 3f. Lock the vault
-
-Top-right **Lock & sign out** revokes your refresh token server-side
-and clears the in-memory symmetric key. You'll have to re-enter the
-master password to come back in.
+- **Zero-knowledge** pill — at-a-glance reminder of the trust model.
+- **Lock** — wipes the in-memory symmetric key, revokes the refresh
+  token server-side, returns to the login screen.
 
 ---
 
-## 4. Chrome extension
+## 4. Connect
+
+The headline feature: jump from a saved credential to a working
+connection in one click. Click **Connect →** on any row:
+
+![Connect dialog with JDBC URL, SSH, copy-command, and RDP options](img/vault-connect.png)
+
+The dialog adapts per credential. For a Postgres entry it offers four
+actions, ranked by how a DBA actually works:
+
+### 4a. Copy JDBC URL
+
+Builds a JDBC connection string suitable for **DBeaver, IntelliJ
+DataGrip, DBVisualizer, Squirrel SQL** and most enterprise ETL tools:
+
+| Engine     | Format                                                                  |
+| ---------- | ----------------------------------------------------------------------- |
+| PostgreSQL | `jdbc:postgresql://host:port/database`                                  |
+| MySQL      | `jdbc:mysql://host:port/database`                                       |
+| MariaDB    | `jdbc:mariadb://host:port/database`                                     |
+| Oracle     | `jdbc:oracle:thin:@//host:port/SERVICE_NAME` (or `host:port:SID`)       |
+| SQL Server | `jdbc:sqlserver://host:port;databaseName=db`                            |
+| MongoDB    | `jdbc:mongodb://host:port/database`                                     |
+
+Passman copies the URL **without the password** — almost every JDBC tool
+wants it in a separate field, and embedding it in the URL leaks the
+password into driver connection logs and (on some platforms) into `ps`
+output. The password is queued on the clipboard separately, ready for
+the next paste, with a 30-second auto-clear.
+
+### 4b. Open SSH session
+
+Triggers the OS's `ssh://` protocol handler, which routes to your
+default terminal: iTerm/Terminal on macOS, Windows Terminal, Konsole on
+Linux. The URL is `ssh://user@host[:port]` — **never** with a password
+embedded (SSH clients reject `:pw@` URLs). The password is copied to
+the clipboard with the same 30-second auto-clear; paste it at the
+`Password:` prompt.
+
+### 4c. Copy connect command
+
+Puts a ready-to-paste shell command on the clipboard:
+
+| Protocol     | Command                                                              |
+| ------------ | -------------------------------------------------------------------- |
+| PostgreSQL   | `psql 'postgres://user@host:port/database'`                          |
+| MySQL        | `mysql -h host -u user -P port -p database`                          |
+| MariaDB      | `mariadb -h host -u user -P port -p database`                        |
+| Oracle       | `sqlplus 'user/****@//host:port/SERVICE_NAME'`                       |
+| SQL Server   | `sqlcmd -S host,port -U user -P "$PASSWORD" -d database`             |
+| Redis        | `redis-cli -h host -p port [--user u] -a "$PASSWORD"`                |
+| Mongo        | `mongosh 'mongodb://user:****@host:port/database'`                   |
+| SSH          | `ssh user@host -p port` (omits `-p` for the default port 22)         |
+
+The placeholder is `****` for tools that prompt for the password
+inline, or `$PASSWORD` where the user is expected to set the env var.
+
+### 4d. Open RDP session
+
+Generates a Windows-format `.rdp` file pre-filled with the hostname,
+port, and (when set) the AD domain + username. The file downloads
+through the browser; opening it hands off to:
+
+- **Windows** — the built-in `mstsc.exe`.
+- **macOS** — Microsoft Remote Desktop (App Store).
+- **Linux** — Remmina or FreeRDP via the system MIME handler.
+
+Like the other actions, the password is on the clipboard for 30
+seconds; paste it at the credential prompt the RDP client shows on
+first connect.
+
+> ⚠️ **Why isn't the password embedded in the .rdp file?** The format
+> only accepts a DPAPI-encrypted blob (Windows) or the OS keychain
+> (macOS / Linux), neither of which a browser can produce. Clipboard
+> auto-clear is the practical compromise.
+
+### 4e. What disabled options mean
+
+The dialog greys out actions that don't apply to a credential:
+
+- **Copy JDBC URL** is disabled for SSH, RDP, Redis, and HTTPS entries.
+- **Open SSH session** is disabled if the entry has no host.
+- **Open RDP session** is disabled if there's no host.
+- **Copy connect command** is disabled for RDP and HTTPS (no canonical
+  CLI).
+
+---
+
+## 5. Add a new credential
+
+Click **+ New credential** in the top-right:
+
+![Add credential form with Protocol, Database, Environment, and per-engine fields](img/vault-add.png)
+
+The form is **protocol-aware**:
+
+- Pick **Protocol** first; the form auto-fills the default port
+  (`5432` for PostgreSQL, `22` for SSH, `3389` for RDP, …).
+- For database protocols, a **Database** field appears (and a
+  **Service name** field for Oracle).
+- For RDP, a **Windows AD domain** field appears so the resulting `.rdp`
+  file uses `DOMAIN\user` correctly.
+- **Environment** is free-form (`prod`, `staging`, `dev`, `cache`, …) —
+  the colour of the env tag in the grid is inferred from the prefix.
+
+Empty fields are stripped before encryption, so the ciphertext stays
+small and forward-compatible.
+
+---
+
+## 6. Chrome extension
 
 > ⚠️ The extension's runtime code typechecks cleanly, but a loadable
 > Chrome bundle requires a Vite multi-entry config that is tracked for a
@@ -150,47 +248,39 @@ master password to come back in.
 > the extension is loadable. The web vault remains the primary client
 > for now.
 
-### 4a. Locked popup
-
-Click the Passman toolbar icon when the vault is locked (or freshly
-installed):
+### 6a. Locked popup
 
 ![Extension popup — locked](img/extension-locked.png)
 
-Enter the same email + master password you use on the web vault. The
-extension's service worker performs the same client-side derivation +
-unlock, then keeps the decrypted symmetric key in memory only.
+Same email + master password you use on the web vault. The extension's
+service worker performs the same client-side derivation + unlock, then
+keeps the decrypted symmetric key in memory only.
 
-### 4b. Unlocked popup
-
-Once unlocked the popup confirms the active session and offers a single
-**Lock vault** button:
+### 6b. Unlocked popup
 
 ![Extension popup — unlocked](img/extension-unlocked.png)
 
 While unlocked, the content script can offer **exact-origin autofill**
-on saved logins — it will only suggest a credential when the page's
-origin matches the URL stored on the item.
-
-Hitting **Lock vault** wipes the in-memory key; the next popup open
-returns to the locked screen.
+on saved logins — it only suggests a credential when the page's origin
+matches the URL stored on the item.
 
 ---
 
-## 5. Tips
+## 7. Tips
 
-- **Master password length matters more than complexity.** Argon2id is
-  tuned to take ~250 ms even on a fast laptop; a 16-character random
+- **Use the protocol field.** Even if Passman can infer the protocol
+  from the port, declaring it explicitly is what unlocks the right
+  Connect actions in the dialog and the engine tile in the grid.
+- **Tag your environments.** A free-form `prod` / `staging` / `dev`
+  tag makes the grid scannable at a glance — and the search box
+  treats environments like any other field.
+- **Keyboard shortcuts.** `⌘K` / `Ctrl+K` focuses the search; `Esc`
+  closes the Connect dialog.
+- **Master password length matters more than complexity.** Argon2id
+  is tuned to take ~250 ms even on a fast laptop; a 16-character random
   passphrase is a far stronger choice than a clever 8-character one.
 - **One vault per machine works fine.** Sessions are bound to refresh
   tokens, not browsers — sign in from as many devices as you like.
-- **Treat the URL field as searchable.** It's included in the search
-  index so you can type a substring of `postgres://…` to find a DB
-  credential by connection string.
-- **DB-style entries.** For database credentials, fill **Hostname**,
-  **IP**, **User**, **Password**, and **Port**; that's the minimum
-  needed to reconstruct a `psql` / `mysql` / `sqlplus` invocation
-  directly from the row.
 
 ---
 
@@ -198,7 +288,9 @@ returns to the locked screen.
 
 Every image in this guide is generated from a self-contained HTML
 mockup under `docs/preview/`. Each mockup loads the real
-`packages/web/src/styles.css`, so the rendering matches the live app.
+`packages/web/src/styles.css`, so the rendering matches the live app
+byte-for-byte — change the CSS, refresh the mockup, the screenshot
+matches.
 
 1. Start the bundled static server:
 
@@ -214,12 +306,24 @@ mockup under `docs/preview/`. Each mockup loads the real
 
    ```bash
    CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-   for page in register login vault vault-search vault-grouped vault-add; do
+
+   # Auth pages
+   for page in register login; do
      "$CHROME" --headless --disable-gpu --hide-scrollbars \
        --window-size=1280,900 \
        --screenshot="docs/img/${page}.png" \
        "http://127.0.0.1:4173/docs/preview/${page}.html"
    done
+
+   # Vault pages — wider window for the grid + sidebar
+   for page in vault vault-add vault-connect; do
+     "$CHROME" --headless --disable-gpu --hide-scrollbars \
+       --window-size=1500,1000 \
+       --screenshot="docs/img/${page}.png" \
+       "http://127.0.0.1:4173/docs/preview/${page}.html"
+   done
+
+   # Extension popups
    for page in extension-locked extension-unlocked; do
      "$CHROME" --headless --disable-gpu --hide-scrollbars \
        --window-size=400,360 \

@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Passman — Connect dialog</title>
+    <link rel="stylesheet" href="../../packages/web/src/styles.css" />
+  </head>
+  <body>
+    <div class="vault-app">
+      <!-- Sidebar (kept simple — focus is the dialog) -->
+      <aside class="vault-side">
+        <div class="brand"><div class="brand-mark"></div> Passman</div>
+        <div class="side-search">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input placeholder="Filter views…" />
+        </div>
+        <div>
+          <div class="side-section">Vault</div>
+          <div class="side-list">
+            <button class="side-item active"><span class="left">All credentials</span><span class="count">6</span></button>
+          </div>
+        </div>
+        <div class="user-card">
+          <div class="avatar">VA</div>
+          <div class="who">
+            <div class="email">ops@example.az</div>
+            <small>Vault unlocked</small>
+          </div>
+        </div>
+      </aside>
+
+      <main class="vault-main">
+        <div class="vault-headrow">
+          <div>
+            <h1>All credentials</h1>
+            <p class="sub"><span>6 entries</span></p>
+          </div>
+          <button class="btn btn-primary">+ New credential</button>
+        </div>
+        <div class="grid-panel" style="opacity:0.4;">
+          <div style="padding: 4rem 2rem; text-align: center; color: var(--muted);">
+            (grid behind the modal)
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- ============================== Connect dialog ============================== -->
+    <div class="modal-backdrop" role="dialog" aria-labelledby="connect-title">
+      <div class="modal">
+        <div class="modal-head">
+          <span class="engine-tile e-psql">PG</span>
+          <div>
+            <h2 id="connect-title">Connect to prod-pg-primary</h2>
+            <div class="target">db-prod-01 · 10.0.0.42 · db-prod-01:5432 · postgres</div>
+          </div>
+          <button class="x" aria-label="Close">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <button class="conn-option">
+            <span class="ico">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+            </span>
+            <span class="label">
+              <div class="title">Copy JDBC URL</div>
+              <div class="meta">jdbc:postgresql://db-prod-01:5432/app</div>
+              <div class="hint">For DBeaver, DataGrip, DBVisualizer · paste the password into the connection's password field</div>
+            </span>
+            <span class="go">Copy URL</span>
+          </button>
+
+          <button class="conn-option">
+            <span class="ico">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>
+            </span>
+            <span class="label">
+              <div class="title">Open SSH session</div>
+              <div class="meta">ssh://postgres@db-prod-01</div>
+              <div class="hint">Launches your default terminal via the ssh:// handler · password copied to clipboard</div>
+            </span>
+            <span class="go">Connect</span>
+          </button>
+
+          <button class="conn-option">
+            <span class="ico">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </span>
+            <span class="label">
+              <div class="title">Copy connect command</div>
+              <div class="meta">psql 'postgres://postgres@db-prod-01:5432/app'</div>
+              <div class="hint">Ready-to-paste shell command · password also on clipboard</div>
+            </span>
+            <span class="go">Copy</span>
+          </button>
+
+          <button class="conn-option">
+            <span class="ico">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m6 9 4 3-4 3M12 15h6"/></svg>
+            </span>
+            <span class="label">
+              <div class="title">Open RDP session</div>
+              <div class="meta">db-prod-01:5432</div>
+              <div class="hint">Downloads a pre-filled .rdp · password copied to clipboard, paste at the credential prompt</div>
+            </span>
+            <span class="go">Download .rdp</span>
+          </button>
+        </div>
+
+        <div class="modal-foot">
+          <span class="lock-ico">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </span>
+          <span>Decrypted in your browser. Server never sees the password.</span>
+          <span class="spacer"></span>
+          <button>Cancel</button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

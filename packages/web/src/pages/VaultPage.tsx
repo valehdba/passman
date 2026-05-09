@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -7,49 +7,19 @@ import {
   type VaultLoginPlaintext,
 } from "@passman/core";
 
-import { type VaultItem, api } from "../api/client.js";
+import { api } from "../api/client.js";
+import {
+  effectiveProtocol,
+  protocolLabel,
+} from "../connect/index.js";
 import { useSession } from "../stores/session.js";
-
-interface DecryptedItem extends VaultItem {
-  plaintext: VaultLoginPlaintext;
-}
-
-type GroupKey = "none" | "hostname" | "ip" | "username" | "port";
-
-const GROUP_OPTIONS: { value: GroupKey; label: string }[] = [
-  { value: "none", label: "No grouping" },
-  { value: "hostname", label: "Hostname" },
-  { value: "ip", label: "IP address" },
-  { value: "username", label: "User" },
-  { value: "port", label: "Port" },
-];
-
-interface DraftState {
-  name: string;
-  username: string;
-  password: string;
-  hostname: string;
-  ip: string;
-  port: string;
-  url: string;
-}
-
-const EMPTY_DRAFT: DraftState = {
-  name: "",
-  username: "",
-  password: "",
-  hostname: "",
-  ip: "",
-  port: "",
-  url: "",
-};
-
-function groupValue(item: DecryptedItem, key: GroupKey): string {
-  if (key === "none") return "";
-  const raw = item.plaintext[key];
-  if (raw === undefined || raw === null || raw === "") return "(unspecified)";
-  return String(raw);
-}
+import { AddCredentialForm } from "./vault/AddCredentialForm.js";
+import { ConnectDialog } from "./vault/ConnectDialog.js";
+import { CredentialsGrid } from "./vault/CredentialsGrid.js";
+import { IconLock, IconSearch } from "./vault/icons.js";
+import { markUsed } from "./vault/lastUsed.js";
+import { Sidebar, type SidebarScope } from "./vault/Sidebar.js";
+import type { DecryptedItem } from "./vault/types.js";
 
 function matchesQuery(item: DecryptedItem, query: string): boolean {
   if (!query) return true;
@@ -62,7 +32,12 @@ function matchesQuery(item: DecryptedItem, query: string): boolean {
     p.ip,
     p.url,
     p.notes,
+    p.database,
+    p.serviceName,
+    p.domain,
+    p.environment,
     p.port !== undefined ? String(p.port) : "",
+    protocolLabel(effectiveProtocol(p)),
   ]
     .filter(Boolean)
     .join(" ")
@@ -70,21 +45,36 @@ function matchesQuery(item: DecryptedItem, query: string): boolean {
   return haystack.includes(q);
 }
 
+function matchesScope(item: DecryptedItem, scope: SidebarScope | null): boolean {
+  if (!scope) return true;
+  const p = item.plaintext;
+  switch (scope.groupKey) {
+    case "ip": return p.ip === scope.value;
+    case "port": return p.port !== undefined && String(p.port) === scope.value;
+    case "username": return p.username === scope.value;
+    case "hostname": return p.hostname === scope.value;
+    case "protocol": return protocolLabel(effectiveProtocol(p)) === scope.value;
+    case "none": return true;
+  }
+}
+
 export function VaultPage() {
   const nav = useNavigate();
-  const { accessToken, refreshToken, vault, clear } = useSession();
+  const { email, accessToken, refreshToken, vault, clear } = useSession();
 
   const [items, setItems] = useState<DecryptedItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [query, setQuery] = useState("");
-  const [groupBy, setGroupBy] = useState<GroupKey>("none");
-  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
-
+  const [scope, setScope] = useState<SidebarScope | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [connectingItem, setConnectingItem] = useState<DecryptedItem | null>(null);
   const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState<DraftState>(EMPTY_DRAFT);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<number | null>(null);
 
+  // Trigger initial decrypt-and-load.
   useEffect(() => {
     if (!accessToken || !vault) {
       nav("/login");
@@ -93,6 +83,25 @@ export function VaultPage() {
     void loadItems();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ⌘K / Ctrl+K to focus the search box.
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  function showToast(msg: string) {
+    setToast(msg);
+    if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(null), 3500);
+  }
 
   async function loadItems() {
     if (!accessToken || !vault) return;
@@ -114,32 +123,16 @@ export function VaultPage() {
     }
   }
 
-  async function onAdd(e: React.FormEvent) {
-    e.preventDefault();
+  async function onAdd(plaintext: VaultLoginPlaintext) {
     if (!accessToken || !vault) return;
-    try {
-      // Only persist fields the user actually filled in.
-      const portNum = draft.port === "" ? NaN : Number(draft.port);
-      const cleaned: VaultLoginPlaintext = {
-        name: draft.name,
-        username: draft.username,
-        password: draft.password,
-        ...(draft.hostname ? { hostname: draft.hostname } : {}),
-        ...(draft.ip ? { ip: draft.ip } : {}),
-        ...(Number.isFinite(portNum) ? { port: portNum } : {}),
-        ...(draft.url ? { url: draft.url } : {}),
-      };
-      const encoded = await encryptVaultLogin(cleaned, vault);
-      await api.createItem(accessToken, {
-        item_type: encoded.itemType,
-        encrypted_data: encoded.encryptedData,
-      });
-      setDraft(EMPTY_DRAFT);
-      setAdding(false);
-      await loadItems();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to add item");
-    }
+    const encoded = await encryptVaultLogin(plaintext, vault);
+    await api.createItem(accessToken, {
+      item_type: encoded.itemType,
+      encrypted_data: encoded.encryptedData,
+    });
+    setAdding(false);
+    await loadItems();
+    showToast("Credential added");
   }
 
   async function onLogout() {
@@ -156,226 +149,206 @@ export function VaultPage() {
 
   async function onDelete(id: string) {
     if (!accessToken) return;
-    if (!confirm("Delete this item?")) return;
+    if (!confirm("Delete this credential?")) return;
     try {
       await api.deleteItem(accessToken, id);
+      setSelected((s) => {
+        const next = new Set(s);
+        next.delete(id);
+        return next;
+      });
       await loadItems();
+      showToast("Credential deleted");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to delete");
     }
   }
 
-  const filtered = useMemo(
-    () => items.filter((it) => matchesQuery(it, query)),
-    [items, query],
-  );
-
-  const groups = useMemo(() => {
-    if (groupBy === "none") {
-      return [{ key: "", label: "", items: filtered }];
+  async function onDeleteSelected() {
+    if (!accessToken) return;
+    if (selected.size === 0) return;
+    if (!confirm(`Delete ${selected.size} credential(s)?`)) return;
+    try {
+      await Promise.all(
+        [...selected].map((id) => api.deleteItem(accessToken, id)),
+      );
+      setSelected(new Set());
+      await loadItems();
+      showToast(`${selected.size} credential(s) deleted`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to delete");
     }
-    const map = new Map<string, DecryptedItem[]>();
-    for (const it of filtered) {
-      const k = groupValue(it, groupBy);
-      const bucket = map.get(k);
-      if (bucket) bucket.push(it);
-      else map.set(k, [it]);
-    }
-    return Array.from(map.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, list]) => ({ key, label: key, items: list }));
-  }, [filtered, groupBy]);
-
-  function toggleReveal(id: string) {
-    setRevealed((r) => ({ ...r, [id]: !r[id] }));
   }
 
+  function toggleSelect(id: string) {
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    setSelected((s) => {
+      if (s.size === filtered.length) return new Set();
+      return new Set(filtered.map((it) => it.id));
+    });
+  }
+
+  const filtered = useMemo(
+    () => items.filter((it) => matchesScope(it, scope) && matchesQuery(it, query)),
+    [items, scope, query],
+  );
+
+  const hostnameCount = useMemo(
+    () => new Set(items.map((it) => it.plaintext.hostname).filter(Boolean)).size,
+    [items],
+  );
+  const protocolCount = useMemo(
+    () =>
+      new Set(
+        items.map((it) => protocolLabel(effectiveProtocol(it.plaintext))).filter((p) => p !== "—"),
+      ).size,
+    [items],
+  );
+
+  const scopeLabel = scope
+    ? `${scope.groupKey === "username" ? "user" : scope.groupKey} : ${scope.value}`
+    : "All credentials";
+
   return (
-    <main className="vault-container">
-      <header>
-        <h1>Vault</h1>
-        <button onClick={onLogout}>Lock & sign out</button>
-      </header>
+    <div className="vault-app">
+      <Sidebar
+        email={email}
+        items={items}
+        scope={scope}
+        onScopeChange={setScope}
+      />
 
-      {error && <p className="error">{error}</p>}
-
-      <div className="vault-toolbar">
-        <input
-          type="search"
-          className="vault-search"
-          placeholder="Search hostname, IP, user, name…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          aria-label="Search credentials"
-        />
-        <label className="vault-group-label">
-          Group by
-          <select
-            value={groupBy}
-            onChange={(e) => setGroupBy(e.target.value as GroupKey)}
-          >
-            {GROUP_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        {!adding && (
-          <button onClick={() => setAdding(true)}>+ Add login</button>
-        )}
-      </div>
-
-      {loading ? (
-        <p>Loading…</p>
-      ) : filtered.length === 0 ? (
-        <p className="vault-empty">
-          {items.length === 0 ? "No items yet." : "No matches for that search."}
-        </p>
-      ) : (
-        groups.map((g) => (
-          <section key={g.key || "__all"} className="vault-group">
-            {groupBy !== "none" && (
-              <h2 className="vault-group-heading">
-                {g.label} <span className="vault-group-count">({g.items.length})</span>
-              </h2>
-            )}
-            <div className="vault-grid" role="table">
-              <div className="vault-grid-row vault-grid-head" role="row">
-                <span role="columnheader">Name</span>
-                <span role="columnheader">Hostname</span>
-                <span role="columnheader">IP address</span>
-                <span role="columnheader">User</span>
-                <span role="columnheader">Password</span>
-                <span role="columnheader">Port</span>
-                <span role="columnheader" aria-label="Actions" />
-              </div>
-              {g.items.map((it) => {
-                const p = it.plaintext;
-                const isRevealed = !!revealed[it.id];
-                return (
-                  <div key={it.id} className="vault-grid-row" role="row">
-                    <span role="cell" data-col="Name">
-                      <strong>{p.name}</strong>
-                    </span>
-                    <span role="cell" data-col="Hostname">{p.hostname ?? "—"}</span>
-                    <span role="cell" data-col="IP">{p.ip ?? "—"}</span>
-                    <span role="cell" data-col="User">{p.username || "—"}</span>
-                    <span role="cell" data-col="Password" className="vault-pw-cell">
-                      <code>{isRevealed ? p.password : "••••••••"}</code>
-                      <button
-                        type="button"
-                        className="vault-icon-btn"
-                        onClick={() => toggleReveal(it.id)}
-                      >
-                        {isRevealed ? "Hide" : "Show"}
-                      </button>
-                      <button
-                        type="button"
-                        className="vault-icon-btn"
-                        onClick={() => navigator.clipboard.writeText(p.password)}
-                      >
-                        Copy
-                      </button>
-                    </span>
-                    <span role="cell" data-col="Port">
-                      {p.port !== undefined ? p.port : "—"}
-                    </span>
-                    <span role="cell" className="vault-actions">
-                      <button
-                        type="button"
-                        className="vault-icon-btn vault-danger"
-                        onClick={() => onDelete(it.id)}
-                      >
-                        Delete
-                      </button>
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        ))
-      )}
-
-      {adding && (
-        <form onSubmit={onAdd} className="vault-add-form">
-          <h2>New credential</h2>
-          <label>
-            Name
-            <input
-              value={draft.name}
-              onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-              required
-            />
-          </label>
-          <div className="vault-form-row">
-            <label>
-              Hostname
-              <input
-                value={draft.hostname}
-                onChange={(e) => setDraft({ ...draft, hostname: e.target.value })}
-                placeholder="db-prod-01"
-              />
-            </label>
-            <label>
-              IP address
-              <input
-                value={draft.ip}
-                onChange={(e) => setDraft({ ...draft, ip: e.target.value })}
-                placeholder="10.0.0.42"
-              />
-            </label>
-            <label>
-              Port
-              <input
-                type="number"
-                inputMode="numeric"
-                min={0}
-                max={65535}
-                value={draft.port}
-                onChange={(e) => setDraft({ ...draft, port: e.target.value })}
-                placeholder="5432"
-              />
-            </label>
+      <main className="vault-main">
+        <div className="vault-topbar">
+          <div className="crumbs">
+            <strong>Vault</strong>
+            <span className="sep">/</span>
+            {scopeLabel}
           </div>
-          <label>
-            User
+          <div className="top-spacer" />
+          <span className="pill">Zero-knowledge</span>
+          <button className="btn" onClick={onLogout}>
+            <IconLock /> Lock
+          </button>
+        </div>
+
+        <div className="vault-headrow">
+          <div>
+            <h1>{scopeLabel}</h1>
+            <p className="sub">
+              <span>
+                {filtered.length}
+                {filtered.length !== items.length ? ` / ${items.length}` : ""} entries
+              </span>
+              {hostnameCount > 0 && (
+                <>
+                  <span className="dot" /> <span>{hostnameCount} hostnames</span>
+                </>
+              )}
+              {protocolCount > 0 && (
+                <>
+                  <span className="dot" /> <span>{protocolCount} protocols</span>
+                </>
+              )}
+              <span className="dot" /> <span>Decrypted in your browser</span>
+            </p>
+          </div>
+          <button className="btn btn-primary" onClick={() => setAdding(true)}>
+            + New credential
+          </button>
+        </div>
+
+        <div className="vault-toolbar">
+          <div className="vault-search">
+            <IconSearch />
             <input
-              value={draft.username}
-              onChange={(e) => setDraft({ ...draft, username: e.target.value })}
+              ref={searchRef}
+              type="search"
+              placeholder="Search hostname, IP, user, name…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Search credentials"
             />
-          </label>
-          <label>
-            Password
-            <input
-              type="password"
-              value={draft.password}
-              onChange={(e) => setDraft({ ...draft, password: e.target.value })}
-              required
-            />
-          </label>
-          <label>
-            URL
-            <input
-              value={draft.url}
-              onChange={(e) => setDraft({ ...draft, url: e.target.value })}
-            />
-          </label>
-          <div className="vault-form-actions">
-            <button type="submit">Save</button>
+            <span className="kbd-hint">⌘K</span>
+          </div>
+          {scope && (
+            <button className="btn btn-ghost" onClick={() => setScope(null)}>
+              Clear group
+            </button>
+          )}
+        </div>
+
+        {error && <p className="error">{error}</p>}
+
+        {selected.size > 0 && (
+          <div className="sel-toolbar">
+            <span className="count">{selected.size} selected</span>
             <button
               type="button"
-              onClick={() => {
-                setAdding(false);
-                setDraft(EMPTY_DRAFT);
-              }}
+              className="danger"
+              onClick={onDeleteSelected}
             >
-              Cancel
+              Delete
+            </button>
+            <span className="spacer" />
+            <button
+              type="button"
+              className="clear"
+              onClick={() => setSelected(new Set())}
+            >
+              Clear selection
             </button>
           </div>
-        </form>
+        )}
+
+        {loading ? (
+          <div className="grid-panel">
+            <div className="empty-state">Loading…</div>
+          </div>
+        ) : (
+          <CredentialsGrid
+            items={filtered}
+            selectedIds={selected}
+            onToggleSelect={toggleSelect}
+            onToggleSelectAll={toggleSelectAll}
+            onConnect={(it) => {
+              markUsed(it.id);
+              setConnectingItem(it);
+            }}
+            onDelete={onDelete}
+            onToast={showToast}
+          />
+        )}
+
+        {adding && (
+          <AddCredentialForm
+            onSubmit={onAdd}
+            onCancel={() => setAdding(false)}
+          />
+        )}
+      </main>
+
+      <ConnectDialog
+        item={connectingItem}
+        onClose={() => setConnectingItem(null)}
+        onUsed={(id) => markUsed(id)}
+        onToast={showToast}
+      />
+
+      {toast && (
+        <div className="toast" role="status">
+          <span className="lock-ico"><IconLock /></span>
+          {toast}
+        </div>
       )}
-    </main>
+    </div>
   );
 }

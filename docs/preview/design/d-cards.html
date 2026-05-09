@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Passman — Variant D · Card grid</title>
+    <style>
+      :root {
+        --brand: #3ecf8e;
+        --bg: #131415;
+        --panel: #1a1c1d;
+        --panel-2: #1f2122;
+        --line: #262829;
+        --line-strong: #353738;
+        --fg: #ededed;
+        --muted: #8a8d8e;
+        --danger: #f87171;
+
+        /* Per-engine accents */
+        --pg: #336791;
+        --oracle: #f80000;
+        --mysql: #00758f;
+        --redis: #d92121;
+        --mongo: #00ed64;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; background: var(--bg); color: var(--fg); }
+      body {
+        font-family: "Inter", system-ui, sans-serif;
+        font-size: 14px;
+        background-image:
+          radial-gradient(60% 50% at 50% -10%, rgba(62, 207, 142, 0.08) 0%, transparent 60%);
+      }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.95rem 2rem;
+        border-bottom: 1px solid var(--line);
+      }
+      .logo { display: flex; align-items: center; gap: 0.55rem; font-weight: 600; }
+      .logo-mark {
+        width: 22px; height: 22px; border-radius: 6px;
+        background: linear-gradient(135deg, var(--brand) 0%, #14b884 100%);
+        box-shadow: 0 0 14px rgba(62, 207, 142, 0.4);
+      }
+      .nav-spacer { flex: 1; }
+      .pill {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.25rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        color: var(--brand);
+        background: rgba(62, 207, 142, 0.1);
+        border: 1px solid rgba(62, 207, 142, 0.3);
+      }
+      .pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 8px var(--brand); }
+      .btn {
+        font-family: inherit; font-size: 0.85rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 6px;
+        border: 1px solid var(--line-strong);
+        background: var(--panel);
+        color: var(--fg);
+        cursor: pointer;
+      }
+      .btn-primary { background: var(--brand); color: #062a18; border-color: var(--brand); font-weight: 600; }
+
+      .layout { max-width: 1280px; margin: 2rem auto; padding: 0 2rem; }
+      .head-row {
+        display: flex; align-items: flex-end; justify-content: space-between;
+        gap: 1rem; margin-bottom: 1.25rem;
+      }
+      .head-row h1 { margin: 0; font-size: 1.5rem; letter-spacing: -0.02em; }
+      .head-row p { margin: 0.3rem 0 0; color: var(--muted); font-size: 0.88rem; }
+
+      .toolbar {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 0.6rem;
+        margin-bottom: 1.25rem;
+      }
+      .search { position: relative; }
+      .search input {
+        width: 100%;
+        padding: 0.6rem 0.95rem 0.6rem 2.4rem;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--fg);
+        font-size: 0.9rem;
+      }
+      .search input::placeholder { color: var(--muted); }
+      .search svg { position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); opacity: 0.55; }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+        gap: 1rem;
+      }
+
+      .card {
+        position: relative;
+        background: linear-gradient(180deg, rgba(255,255,255,0.025) 0%, transparent 100%), var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 1rem 1.1rem 0.85rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        transition: transform 0.15s ease, border-color 0.15s ease;
+      }
+      .card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 12px;
+        padding: 1px;
+        background: linear-gradient(180deg, var(--accent, var(--brand)), transparent 40%);
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        opacity: 0.35;
+        pointer-events: none;
+      }
+      .card:hover { transform: translateY(-1px); }
+      .card-head {
+        display: flex; align-items: center; gap: 0.55rem;
+      }
+      .engine-tag {
+        display: inline-flex; align-items: center; gap: 0.35rem;
+        padding: 0.2rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid var(--line-strong);
+        color: var(--muted);
+      }
+      .engine-tag .swatch { width: 6px; height: 6px; border-radius: 50%; background: var(--accent, var(--brand)); }
+      .card-name {
+        font-size: 1rem; font-weight: 600; letter-spacing: -0.01em;
+      }
+      .card-host {
+        color: var(--muted); font-size: 0.8rem;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+      }
+
+      .meta-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.55rem 0.85rem;
+        font-size: 0.78rem;
+      }
+      .meta-key { color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; font-size: 0.66rem; }
+      .meta-val {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 0.83rem;
+      }
+      .pw-row {
+        display: flex; align-items: center; gap: 0.4rem;
+        background: rgba(255,255,255,0.025);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 0.35rem 0.45rem 0.35rem 0.6rem;
+      }
+      .pw-row code {
+        flex: 1;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 0.82rem;
+      }
+      .icon-btn {
+        background: transparent;
+        border: 1px solid var(--line-strong);
+        color: var(--muted);
+        padding: 0.18rem 0.5rem;
+        font-size: 0.72rem;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .icon-btn.danger { color: var(--danger); border-color: rgba(248, 113, 113, 0.25); }
+
+      .card-foot {
+        display: flex; gap: 0.4rem;
+        padding-top: 0.55rem;
+        border-top: 1px solid var(--line);
+        margin-top: 0.2rem;
+      }
+
+      /* Engine accents per card */
+      .e-pg { --accent: var(--pg); }
+      .e-oracle { --accent: var(--oracle); }
+      .e-mysql { --accent: var(--mysql); }
+      .e-redis { --accent: var(--redis); }
+      .e-mongo { --accent: var(--mongo); }
+    </style>
+  </head>
+  <body>
+    <nav class="nav">
+      <div class="logo"><div class="logo-mark"></div> Passman</div>
+      <div class="nav-spacer"></div>
+      <span class="pill">Vault unlocked</span>
+      <button class="btn">ops@example.az</button>
+      <button class="btn">Lock</button>
+    </nav>
+
+    <div class="layout">
+      <div class="head-row">
+        <div>
+          <h1>Credentials</h1>
+          <p>6 entries · grouped by engine · decrypted in your browser</p>
+        </div>
+        <button class="btn btn-primary">+ New credential</button>
+      </div>
+
+      <div class="toolbar">
+        <div class="search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input placeholder="Search hostname, IP, user, name…   ⌘K" />
+        </div>
+        <button class="btn">Engine: All</button>
+        <button class="btn">Sort: Name</button>
+      </div>
+
+      <div class="grid">
+        <article class="card e-pg">
+          <div class="card-head">
+            <span class="engine-tag"><span class="swatch"></span>Postgres</span>
+          </div>
+          <div>
+            <div class="card-name">prod-pg-primary</div>
+            <div class="card-host">db-prod-01 · 10.0.0.42:5432</div>
+          </div>
+          <div class="meta-row">
+            <div><div class="meta-key">User</div><div class="meta-val">postgres</div></div>
+            <div><div class="meta-key">Port</div><div class="meta-val">5432</div></div>
+          </div>
+          <div class="pw-row">
+            <code>••••••••••••</code>
+            <button class="icon-btn">Reveal</button>
+            <button class="icon-btn">Copy</button>
+          </div>
+          <div class="card-foot">
+            <button class="icon-btn">Edit</button>
+            <button class="icon-btn">Open URL</button>
+            <button class="icon-btn danger" style="margin-left:auto">Delete</button>
+          </div>
+        </article>
+
+        <article class="card e-pg">
+          <div class="card-head">
+            <span class="engine-tag"><span class="swatch"></span>Postgres</span>
+          </div>
+          <div>
+            <div class="card-name">prod-pg-replica</div>
+            <div class="card-host">db-prod-02 · 10.0.0.43:5432</div>
+          </div>
+          <div class="meta-row">
+            <div><div class="meta-key">User</div><div class="meta-val">replicator</div></div>
+            <div><div class="meta-key">Port</div><div class="meta-val">5432</div></div>
+          </div>
+          <div class="pw-row">
+            <code>••••••••••••</code>
+            <button class="icon-btn">Reveal</button>
+            <button class="icon-btn">Copy</button>
+          </div>
+          <div class="card-foot">
+            <button class="icon-btn">Edit</button>
+            <button class="icon-btn">Open URL</button>
+            <button class="icon-btn danger" style="margin-left:auto">Delete</button>
+          </div>
+        </article>
+
+        <article class="card e-oracle">
+          <div class="card-head">
+            <span class="engine-tag"><span class="swatch"></span>Oracle</span>
+          </div>
+          <div>
+            <div class="card-name">oracle-erp</div>
+            <div class="card-host">erp-db-01 · 10.0.1.10:1521</div>
+          </div>
+          <div class="meta-row">
+            <div><div class="meta-key">User</div><div class="meta-val">sys</div></div>
+            <div><div class="meta-key">Port</div><div class="meta-val">1521</div></div>
+          </div>
+          <div class="pw-row">
+            <code>P@ssM4nDemo!</code>
+            <button class="icon-btn">Hide</button>
+            <button class="icon-btn">Copy</button>
+          </div>
+          <div class="card-foot">
+            <button class="icon-btn">Edit</button>
+            <button class="icon-btn">Open URL</button>
+            <button class="icon-btn danger" style="margin-left:auto">Delete</button>
+          </div>
+        </article>
+
+        <article class="card e-mysql">
+          <div class="card-head">
+            <span class="engine-tag"><span class="swatch"></span>MySQL</span>
+          </div>
+          <div>
+            <div class="card-name">mysql-reporting</div>
+            <div class="card-host">rpt-db-01 · 10.0.2.21:3306</div>
+          </div>
+          <div class="meta-row">
+            <div><div class="meta-key">User</div><div class="meta-val">analytics</div></div>
+            <div><div class="meta-key">Port</div><div class="meta-val">3306</div></div>
+          </div>
+          <div class="pw-row">
+            <code>••••••••••••</code>
+            <button class="icon-btn">Reveal</button>
+            <button class="icon-btn">Copy</button>
+          </div>
+          <div class="card-foot">
+            <button class="icon-btn">Edit</button>
+            <button class="icon-btn">Open URL</button>
+            <button class="icon-btn danger" style="margin-left:auto">Delete</button>
+          </div>
+        </article>
+
+        <article class="card e-redis">
+          <div class="card-head">
+            <span class="engine-tag"><span class="swatch"></span>Redis</span>
+          </div>
+          <div>
+            <div class="card-name">redis-cache</div>
+            <div class="card-host">cache-01 · 10.0.3.5:6379</div>
+          </div>
+          <div class="meta-row">
+            <div><div class="meta-key">User</div><div class="meta-val">default</div></div>
+            <div><div class="meta-key">Port</div><div class="meta-val">6379</div></div>
+          </div>
+          <div class="pw-row">
+            <code>••••••••••••</code>
+            <button class="icon-btn">Reveal</button>
+            <button class="icon-btn">Copy</button>
+          </div>
+          <div class="card-foot">
+            <button class="icon-btn">Edit</button>
+            <button class="icon-btn">Open URL</button>
+            <button class="icon-btn danger" style="margin-left:auto">Delete</button>
+          </div>
+        </article>
+
+        <article class="card e-mongo">
+          <div class="card-head">
+            <span class="engine-tag"><span class="swatch"></span>Mongo</span>
+          </div>
+          <div>
+            <div class="card-name">mongo-shard-a</div>
+            <div class="card-host">mongo-01 · 10.0.4.11:27017</div>
+          </div>
+          <div class="meta-row">
+            <div><div class="meta-key">User</div><div class="meta-val">admin</div></div>
+            <div><div class="meta-key">Port</div><div class="meta-val">27017</div></div>
+          </div>
+          <div class="pw-row">
+            <code>••••••••••••</code>
+            <button class="icon-btn">Reveal</button>
+            <button class="icon-btn">Copy</button>
+          </div>
+          <div class="card-foot">
+            <button class="icon-btn">Edit</button>
+            <button class="icon-btn">Open URL</button>
+            <button class="icon-btn danger" style="margin-left:auto">Delete</button>
+          </div>
+        </article>
+      </div>
+    </div>
+  </body>
+</html>
