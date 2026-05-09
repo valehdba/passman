@@ -41,6 +41,10 @@ main {
   max-width: 540px;
 }
 
+main.vault-container {
+  max-width: 1180px;
+}
+
 h1 { margin-top: 0; }
 
 form {
@@ -102,31 +106,177 @@ button[type="button"] {
   align-items: center;
 }
 
-.vault-list {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.vault-list li {
+.vault-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0 1.25rem;
+}
+
+.vault-search {
+  flex: 1 1 280px;
+  min-width: 220px;
+}
+
+.vault-group-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.vault-group-label select {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.95rem;
   border: 1px solid var(--border);
   border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
 }
 
-.vault-list li > span {
+.vault-empty {
   color: var(--muted);
-  font-size: 0.875rem;
+  font-style: italic;
 }
 
-.vault-list li > button {
-  margin-left: auto;
-  font-size: 0.875rem;
-  padding: 0.25rem 0.5rem;
+.vault-group {
+  margin-bottom: 1.5rem;
+}
+
+.vault-group-heading {
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 0 0 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.vault-group-count {
+  color: var(--muted);
+  font-weight: normal;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.vault-grid {
+  display: grid;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.vault-grid-row {
+  display: grid;
+  grid-template-columns:
+    minmax(140px, 1.4fr)
+    minmax(120px, 1.2fr)
+    minmax(110px, 1fr)
+    minmax(110px, 1fr)
+    minmax(180px, 1.6fr)
+    minmax(60px, 0.5fr)
+    minmax(80px, 0.7fr);
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.vault-grid-row:last-child {
+  border-bottom: none;
+}
+
+.vault-grid-head {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.vault-grid-row > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vault-pw-cell {
+  display: flex !important;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap !important;
+}
+
+.vault-pw-cell code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vault-actions {
+  display: flex !important;
+  justify-content: flex-end;
+  gap: 0.3rem;
+}
+
+.vault-icon-btn {
+  padding: 0.2rem 0.55rem;
+  font-size: 0.78rem;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--border);
+}
+
+.vault-icon-btn.vault-danger {
+  color: var(--error);
+  border-color: color-mix(in srgb, var(--error) 40%, var(--border));
+}
+
+.vault-add-form {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.vault-add-form h2 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+.vault-form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.vault-form-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+}
+
+@media (max-width: 760px) {
+  .vault-grid-row {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+    padding: 0.75rem;
+  }
+  .vault-grid-head { display: none; }
+  .vault-grid-row > span[data-col]::before {
+    content: attr(data-col) ": ";
+    color: var(--muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-right: 0.4rem;
+  }
+  .vault-actions { justify-content: flex-start; }
 }
