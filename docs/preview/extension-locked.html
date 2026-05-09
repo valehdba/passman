@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Passman — Extension popup (locked)</title>
+    <style>
+      html, body { background: #f3f4f6; margin: 0; }
+      .frame {
+        width: 280px;
+        margin: 1.5rem auto;
+        background: #fff;
+        border: 1px solid #d0d7de;
+        border-radius: 10px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        overflow: hidden;
+      }
+      /* Mirrors the inline styles from packages/extension/src/popup/index.html */
+      .popup-body { font-family: system-ui, sans-serif; width: 280px; padding: 1rem; margin: 0; box-sizing: border-box; }
+      .popup-body h1 { font-size: 1rem; margin: 0 0 0.75rem; }
+      .popup-body label { display: block; margin-bottom: 0.5rem; font-size: 0.85rem; }
+      .popup-body input { width: 100%; padding: 0.4rem; box-sizing: border-box; font-size: 0.9rem; }
+      .popup-body button { width: 100%; padding: 0.5rem; margin-top: 0.5rem; cursor: pointer; }
+      .popup-body .status { font-size: 0.8rem; color: #666; margin-bottom: 0.5rem; }
+      .popup-body .error { color: #b00020; font-size: 0.8rem; }
+    </style>
+  </head>
+  <body>
+    <div class="frame">
+      <div class="popup-body">
+        <div id="root">
+          <h1>Unlock Passman</h1>
+          <label>Email<input type="email" value="ops@example.az" /></label>
+          <label>Master password<input type="password" value="............" /></label>
+          <p class="error"></p>
+          <button>Unlock</button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
