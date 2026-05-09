@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import { useBranding } from "../../branding/index.js";
 import { effectiveProtocol, protocolLabel } from "../../connect/index.js";
 import { IconSearch } from "./icons.js";
 import type { DecryptedItem, GroupKey } from "./types.js";
@@ -24,6 +25,7 @@ interface Props {
 
 export function Sidebar({ email, items, scope, onScopeChange }: Props) {
   const [filter, setFilter] = useState("");
+  const branding = useBranding();
 
   const ipBuckets = useMemo(() => bucket(items, "ip"), [items]);
   const portBuckets = useMemo(() => bucket(items, "port"), [items]);
@@ -36,7 +38,18 @@ export function Sidebar({ email, items, scope, onScopeChange }: Props) {
   return (
     <aside className="vault-side">
       <div className="brand">
-        <div className="brand-mark" /> Passman
+        {branding.logoUrl ? (
+          <img
+            className="brand-logo"
+            src={branding.logoUrl}
+            alt={`${branding.appName} logo`}
+            width={22}
+            height={22}
+          />
+        ) : (
+          <div className="brand-mark" />
+        )}{" "}
+        {branding.appName}
       </div>
 
       <div className="side-search">
@@ -123,9 +136,23 @@ export function Sidebar({ email, items, scope, onScopeChange }: Props) {
           <div className="email" title={email ?? ""}>
             {email ?? "Unknown"}
           </div>
-          <small>Vault unlocked</small>
+          <small>
+            Vault unlocked
+            {branding.supportEmail && (
+              <>
+                {" · "}
+                <a href={`mailto:${branding.supportEmail}`}>Support</a>
+              </>
+            )}
+          </small>
         </div>
       </div>
+
+      {branding.footerText && (
+        <div className="brand-footer" title={branding.footerText}>
+          {branding.footerText}
+        </div>
+      )}
     </aside>
   );
 }

@@ -1,0 +1,9 @@
+{
+  "appName": "Acme Vault",
+  "tagline": "Your team's credentials, safely off the cloud.",
+  "logoUrl": "/branding/logo.svg",
+  "brandColor": "#0a66c2",
+  "brandColorDark": "#084d92",
+  "supportEmail": "vault-support@acme.example",
+  "footerText": "© Acme Corp · Internal use only"
+}
