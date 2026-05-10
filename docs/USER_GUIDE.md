@@ -222,7 +222,7 @@ The dialog greys out actions that don't apply to a credential:
 
 Click **+ New credential** in the top-right:
 
-![Add credential form with Protocol, Database, Environment, and per-engine fields](img/vault-add.png)
+![Add credential form with the password generator open and the SSH private-key textarea visible](img/vault-add.png)
 
 The form is **protocol-aware**:
 
@@ -357,14 +357,20 @@ schema bump.
 
 ### 5g. Two-factor authentication (TOTP)
 
-Open the **Settings** link in the sidebar's user card → click **Set up 2FA**.
+Open the **Settings** link in the sidebar's user card. With 2FA off,
+the Security section shows a single "Set up 2FA" call to action:
 
-The setup flow has three steps:
+![Settings page with 2FA disabled](img/settings-2fa-off.png)
+
+Click **Set up 2FA** to start the three-step setup flow:
 
 1. **Scan the QR** with your authenticator (Google Authenticator,
    1Password, Authy, Microsoft Authenticator, …). If your phone can't
    reach the screen, expand "Can't scan? Type this manually" and copy
    the base32 secret directly into the app.
+
+   ![2FA setup — scan QR step](img/settings-2fa-setup-qr.png)
+
 2. **Confirm the first code.** Type the 6-digit code your authenticator
    shows. Passman verifies against the stored secret and only then
    flips the `totp_enabled` flag — if you abandon the flow before this
@@ -374,9 +380,19 @@ The setup flow has three steps:
    them, download the `.txt`, or write them down — Passman keeps only
    Argon2id hashes server-side, so this list cannot be retrieved later.
 
-Once enabled, login becomes two-step: email + master password, then a
-6-digit code. Recovery codes work in place of the 6-digit code (and
-are consumed on first use — `9 remaining` becomes `8`).
+   ![2FA setup — save recovery codes step](img/settings-2fa-setup-recovery.png)
+
+Once enabled, the Settings page shows the active state + how many
+recovery codes are left:
+
+![Settings page with 2FA enabled](img/settings-2fa-on.png)
+
+Login becomes two-step: email + master password (the existing screen),
+then a 6-digit code on a second screen. Recovery codes work in place
+of the 6-digit code (and are consumed on first use — `9 remaining`
+becomes `8`):
+
+![Two-factor verification step on login](img/login-otp.png)
 
 > **Trade-off, plainly stated.** TOTP is **not** zero-knowledge —
 > RFC 6238 requires the verifier to know the shared secret, so the

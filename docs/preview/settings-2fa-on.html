@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Passman — Settings (2FA enabled)</title>
+    <link rel="stylesheet" href="../../packages/web/src/styles.css" />
+  </head>
+  <body>
+    <main class="auth-container settings-container">
+      <div class="auth-brand">
+        <div class="brand-mark brand-mark-lg"></div>
+        <span class="auth-brand-name">Passman</span>
+      </div>
+      <h1>Settings</h1>
+      <p class="auth-tagline">Zero-knowledge password manager</p>
+
+      <section class="settings-section">
+        <header>
+          <h2>Two-factor authentication</h2>
+          <p class="settings-section-hint">
+            Adds a 6-digit code from your authenticator app (Google Authenticator,
+            1Password, Authy, …) to login. <strong>Note:</strong> enabling 2FA
+            stores the OTP secret server-side. Vault contents stay encrypted
+            with your master key — the server still can't read them.
+          </p>
+        </header>
+
+        <div class="settings-row">
+          <div>
+            <div class="settings-status">
+              <span class="status-dot status-dot-on"></span> Enabled
+            </div>
+            <div class="settings-status-meta">9 recovery codes remaining</div>
+          </div>
+          <button type="button" class="btn">Disable 2FA</button>
+        </div>
+      </section>
+
+      <p class="settings-back">
+        <a href="vault.html">← Back to vault</a>
+      </p>
+    </main>
+  </body>
+</html>
