@@ -95,6 +95,62 @@ class TokenPair(BaseModel):
     encrypted_symmetric_key: str
 
 
+class OtpChallengeResponse(BaseModel):
+    """Returned by ``POST /sessions`` when the user has 2FA enabled.
+
+    The client treats this as the signal to prompt for an authenticator
+    code, then POSTs to ``/sessions/otp`` with the same `otp_token` plus
+    the 6-digit code (or a recovery code).
+    """
+
+    requires_otp: Literal[True] = True
+    otp_token: str
+    otp_expires_in: int
+
+
+class OtpLoginRequest(BaseModel):
+    otp_token: str
+    # Allow both 6-digit codes and recovery codes (length up to 9 with the
+    # `xxxx-xxxx` formatting). Pydantic v2 lets us narrow further at runtime.
+    code: str = Field(min_length=4, max_length=32)
+
+
+# -- TOTP / 2FA management (all require an authenticated session) ---------
+
+
+class TotpSetupResponse(BaseModel):
+    """Returned by ``POST /account/totp/setup`` — the data the client needs
+    to render a QR code (`provisioning_uri`) and offer a manual fallback
+    (`secret_base32`). The secret is provisional until the user confirms
+    by submitting a valid code."""
+
+    provisioning_uri: str
+    secret_base32: str
+
+
+class TotpConfirmRequest(BaseModel):
+    code: str = Field(min_length=4, max_length=10)
+
+
+class TotpConfirmResponse(BaseModel):
+    """The plaintext recovery codes are returned exactly once. The server
+    persists only their Argon2id hashes."""
+
+    recovery_codes: list[str]
+
+
+class TotpDisableRequest(BaseModel):
+    """Disabling 2FA requires either a current OTP code or a recovery code,
+    so a stolen access token alone can't downgrade the auth posture."""
+
+    code: str = Field(min_length=4, max_length=32)
+
+
+class TotpStatusResponse(BaseModel):
+    enabled: bool
+    recovery_codes_remaining: int
+
+
 class RefreshRequest(BaseModel):
     refresh_token: str
 

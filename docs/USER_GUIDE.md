@@ -355,6 +355,47 @@ The file shape is intentionally stable (`{ format, version, vault,
 items: [...] }`) so a future Restore flow can consume it without a
 schema bump.
 
+### 5g. Two-factor authentication (TOTP)
+
+Open the **Settings** link in the sidebar's user card → click **Set up 2FA**.
+
+The setup flow has three steps:
+
+1. **Scan the QR** with your authenticator (Google Authenticator,
+   1Password, Authy, Microsoft Authenticator, …). If your phone can't
+   reach the screen, expand "Can't scan? Type this manually" and copy
+   the base32 secret directly into the app.
+2. **Confirm the first code.** Type the 6-digit code your authenticator
+   shows. Passman verifies against the stored secret and only then
+   flips the `totp_enabled` flag — if you abandon the flow before this
+   step your account stays at single-factor.
+3. **Save your recovery codes.** Ten single-use codes are shown
+   *exactly once*. Each lets you log in if you lose your phone. Copy
+   them, download the `.txt`, or write them down — Passman keeps only
+   Argon2id hashes server-side, so this list cannot be retrieved later.
+
+Once enabled, login becomes two-step: email + master password, then a
+6-digit code. Recovery codes work in place of the 6-digit code (and
+are consumed on first use — `9 remaining` becomes `8`).
+
+> **Trade-off, plainly stated.** TOTP is **not** zero-knowledge —
+> RFC 6238 requires the verifier to know the shared secret, so the
+> server now holds your OTP secret alongside the existing auth_key
+> hash. Vault contents stay zero-knowledge: a server breach that leaks
+> both still can't decrypt your credentials. The benefit is that
+> credential-stuffing or phishing attacks against the password alone
+> can't get past login.
+>
+> If you need the strongest server-side guarantee, leave 2FA off —
+> the original posture (auth_key + master-password-derived key) is
+> already strong against offline attacks. WebAuthn / passkeys are the
+> tracked alternative for users who want a second factor without
+> server-side secrets.
+
+To turn 2FA off: Settings → **Disable 2FA** → enter a current code or
+a recovery code. A stolen access token alone can't downgrade — the
+disable endpoint always requires fresh proof.
+
 ---
 
 ## 6. Chrome extension

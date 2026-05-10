@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Index, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, ForeignKey, Index, LargeBinary, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -40,6 +40,27 @@ class User(Base, TimestampMixin):
     # The user's symmetric vault key, encrypted with their master key.
     # Format: "v1:<base64 IV>:<base64 ciphertext+tag>"
     encrypted_symmetric_key: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # ---------------- TOTP / 2FA -------------------------------------------
+    # NOTE: Enabling TOTP necessarily widens the trust model: the server now
+    # holds the per-user OTP secret. Vault contents remain zero-knowledge —
+    # those are still encrypted with the master key the server never sees —
+    # but login auth gains a second secret the server must protect at rest.
+    # A leak of the OTP secret alone does NOT enable vault decryption.
+    #
+    # `totp_secret` is the raw RFC 4226 / 6238 shared secret (typically 20
+    # random bytes). NULL until the user begins setup; remains NULL after
+    # confirmation if `totp_enabled` stays false.
+    totp_secret: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    # `totp_enabled` flips to true after the user confirms with a valid first
+    # code. Until then, the secret is provisional and login still works
+    # without OTP — protects users who started setup but never completed.
+    totp_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    # Argon2id-hashed single-use recovery codes (10 by default), JSON-encoded
+    # list of PHC strings. NULL when 2FA is disabled.
+    totp_recovery_hashes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
     vault_items: Mapped[list[VaultItem]] = relationship(

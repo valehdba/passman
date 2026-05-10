@@ -169,6 +169,45 @@ def decode_access_token(token: str) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# OTP challenge tokens — short-lived (5 min) bearer between phase-1 (password)
+# and phase-2 (OTP) of two-step login. Carries no permissions; they only let
+# the holder POST /sessions/otp with their authenticator code.
+# ---------------------------------------------------------------------------
+
+OTP_CHALLENGE_TTL_SECONDS = 300
+
+
+def create_otp_challenge_token(user_id: str) -> tuple[str, int]:
+    """Return ``(token, ttl_seconds)`` for a phase-1 OTP challenge."""
+    settings = get_settings()
+    now = _utcnow()
+    payload = {
+        "sub": user_id,
+        "iat": int(now.timestamp()),
+        "exp": int((now + timedelta(seconds=OTP_CHALLENGE_TTL_SECONDS)).timestamp()),
+        "jti": secrets.token_urlsafe(16),
+        "type": "otp_challenge",
+    }
+    token = jwt.encode(
+        payload, settings.jwt_secret.get_secret_value(), algorithm=settings.jwt_algorithm
+    )
+    return token, OTP_CHALLENGE_TTL_SECONDS
+
+
+def decode_otp_challenge_token(token: str) -> dict[str, Any]:
+    """Raise :class:`JWTError` on invalid/expired tokens or wrong type."""
+    settings = get_settings()
+    payload = jwt.decode(
+        token,
+        settings.jwt_secret.get_secret_value(),
+        algorithms=[settings.jwt_algorithm],
+    )
+    if payload.get("type") != "otp_challenge":
+        raise JWTError("Invalid token type")
+    return payload
+
+
+# ---------------------------------------------------------------------------
 # Refresh tokens (opaque random string + SHA-256 stored)
 # ---------------------------------------------------------------------------
 
