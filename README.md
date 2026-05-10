@@ -5,7 +5,7 @@ Vault data is encrypted on the client with a key derived from your master
 password, and the server only ever stores ciphertext + KDF parameters. A
 database breach leaks nothing usable.
 
-![Passman vault dashboard](docs/img/vault.png)
+![Passman vault dashboard with Edit, Import, and Connect actions per row](docs/img/vault.png)
 
 The vault treats credentials as connection targets, not just `name +
 password` rows: every entry carries protocol, hostname, IP, port, and
@@ -17,6 +17,14 @@ ready-to-paste `psql` / `mysql` / `sqlplus` command, or a downloadable
 auto-clear; the server still sees only ciphertext.
 
 ![Connect dialog with JDBC, SSH, copy-command, and RDP options](docs/img/vault-connect.png)
+
+Login is optionally protected by **TOTP 2FA** (Google Authenticator,
+1Password, Authy, …) with single-use recovery codes. Vault contents
+remain zero-knowledge regardless — even if the OTP secret leaks, the
+master key the server never sees is still the only thing that decrypts
+the vault.
+
+![Two-factor authentication setup with QR code and recovery codes](docs/img/settings-2fa-setup-qr.png)
 
 ## Architecture at a glance
 

@@ -24,7 +24,11 @@
           <div class="avatar">VA</div>
           <div class="who">
             <div class="email">ops@example.az</div>
-            <small>Vault unlocked</small>
+            <small>
+              <a href="#" class="user-card-action">Settings</a>
+              ·
+              <button type="button" class="user-card-action">Export</button>
+            </small>
           </div>
         </div>
       </aside>
@@ -35,7 +39,10 @@
             <h1>All credentials</h1>
             <p class="sub"><span>6 entries</span><span class="dot"></span><span>Decrypted in your browser</span></p>
           </div>
-          <button class="btn btn-primary">+ New credential</button>
+          <div class="vault-headrow-actions">
+            <button class="btn btn-ghost">↥ Import</button>
+            <button class="btn btn-primary">+ New credential</button>
+          </div>
         </div>
 
         <form class="add-form">
@@ -44,37 +51,37 @@
           <div class="add-form-grid">
             <label>
               Name
-              <input value="staging-pg" placeholder="prod-pg-primary" />
+              <input value="prod-pg-bastion" placeholder="prod-pg-primary" />
             </label>
             <label>
               Protocol
               <select>
                 <option>— auto-detect from port —</option>
-                <option selected>PostgreSQL</option>
+                <option>PostgreSQL</option>
                 <option>MySQL</option>
                 <option>Oracle</option>
-                <option>SSH</option>
+                <option selected>SSH</option>
                 <option>RDP (Windows Remote Desktop)</option>
               </select>
             </label>
             <label>
               Environment
-              <input value="staging" placeholder="prod / staging / dev" />
+              <input value="prod" placeholder="prod / staging / dev" />
             </label>
           </div>
 
           <div class="add-form-grid">
             <label>
               Hostname
-              <input value="db-staging-01" placeholder="db-prod-01" />
+              <input value="db-prod-02" placeholder="db-prod-01" />
             </label>
             <label>
               IP address
-              <input value="10.0.5.12" placeholder="10.0.0.42" />
+              <input value="10.0.0.43" placeholder="10.0.0.42" />
             </label>
             <label>
               Port
-              <input type="number" value="5432" placeholder="5432" />
+              <input type="number" value="22" placeholder="5432" />
             </label>
           </div>
 
@@ -83,23 +90,66 @@
               User
               <input value="postgres" placeholder="postgres" />
             </label>
-            <label>
-              Password
-              <input type="password" value="............" />
+            <label class="pw-field">
+              <span class="pw-field-label-row">
+                Password
+                <button type="button" class="pw-field-gen-toggle">Hide generator</button>
+              </span>
+              <input type="password" value="............................" />
             </label>
           </div>
 
-          <div class="add-form-grid">
-            <label>
-              Database
-              <input value="app" placeholder="app" />
-            </label>
+          <div class="pw-gen">
+            <div class="pw-gen-output">
+              <code class="pw-gen-value">vY2!gK7hQ9xP-mZ4wE6tR8nC</code>
+              <button type="button" class="icon-btn" title="Regenerate">↻</button>
+            </div>
+            <div class="pw-gen-meter" data-strength="excellent">
+              <div class="pw-gen-meter-bar">
+                <div class="pw-gen-meter-fill" style="width: 100%"></div>
+              </div>
+              <span class="pw-gen-meter-label">144 bits · excellent</span>
+            </div>
+            <div class="pw-gen-row">
+              <label class="pw-gen-length">
+                Length: <strong>24</strong>
+                <input type="range" min="6" max="64" value="24" />
+              </label>
+            </div>
+            <div class="pw-gen-row pw-gen-checks">
+              <label><input type="checkbox" checked /> a–z</label>
+              <label><input type="checkbox" checked /> A–Z</label>
+              <label><input type="checkbox" checked /> 0–9</label>
+              <label><input type="checkbox" checked /> !@#$%</label>
+              <label><input type="checkbox" /> No 0/O/1/l</label>
+            </div>
+            <div class="pw-gen-actions">
+              <button type="button" class="btn btn-primary">Use this password</button>
+              <button type="button" class="btn btn-ghost">Cancel</button>
+            </div>
           </div>
 
           <div class="add-form-grid full-row">
             <label>
               URL
-              <input value="postgres://db-staging-01:5432/app" placeholder="https://… or postgres://…" />
+              <input value="ssh://postgres@db-prod-02:22" placeholder="https://… or postgres://…" />
+            </label>
+          </div>
+
+          <div class="add-form-grid full-row">
+            <label>
+              SSH private key (PEM)
+              <textarea class="ssh-key-input" rows="6" spellcheck="false">-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACBOgPYwIcMqkB+vHrrJBxdLs23p0qNkZmLCaUKmzVXBgwAAAJgkZX/gJGV/
+4AAAAAtzc2gtZWQyNTUxOQAAACBOgPYwIcMqkB+vHrrJBxdLs23p0qNkZmLCaUKmzVXBgw
+…
+-----END OPENSSH PRIVATE KEY-----</textarea>
+              <span class="ssh-key-hint">
+                Optional. Encrypted with the same vault key as the password —
+                the server never sees plaintext. Used by the Connect dialog to
+                offer a "Download .pem" path with an `ssh -i` command.
+              </span>
             </label>
           </div>
 

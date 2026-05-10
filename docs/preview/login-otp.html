@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Passman — Two-factor verification</title>
+    <link rel="stylesheet" href="../../packages/web/src/styles.css" />
+  </head>
+  <body>
+    <main class="auth-container">
+      <div class="auth-brand">
+        <div class="brand-mark brand-mark-lg"></div>
+        <span class="auth-brand-name">Passman</span>
+      </div>
+      <h1>Two-factor verification</h1>
+      <p class="auth-tagline">
+        Enter the 6-digit code from your authenticator app, or one of your
+        recovery codes.
+      </p>
+      <form>
+        <label>
+          Authenticator code
+          <input
+            inputmode="numeric"
+            pattern="[0-9]*"
+            value="142 857"
+            placeholder="123456 or xxxx-xxxx"
+          />
+        </label>
+        <button type="submit">Continue</button>
+      </form>
+      <p>
+        <button type="button" class="user-card-action">← Start over</button>
+      </p>
+    </main>
+  </body>
+</html>

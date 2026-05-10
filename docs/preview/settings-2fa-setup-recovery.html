@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Passman — Save your recovery codes</title>
+    <link rel="stylesheet" href="../../packages/web/src/styles.css" />
+  </head>
+  <body>
+    <main class="auth-container settings-container">
+      <div class="auth-brand">
+        <div class="brand-mark brand-mark-lg"></div>
+        <span class="auth-brand-name">Passman</span>
+      </div>
+      <h1>Settings</h1>
+      <p class="auth-tagline">Zero-knowledge password manager</p>
+
+      <section class="settings-section" style="opacity: 0.4">
+        <header>
+          <h2>Two-factor authentication</h2>
+          <p class="settings-section-hint">
+            Adds a 6-digit code from your authenticator app to login.
+          </p>
+        </header>
+      </section>
+    </main>
+
+    <!-- ============================== Recovery codes modal ============================== -->
+    <div class="modal-backdrop" role="dialog" aria-modal="true">
+      <div class="modal modal-wide">
+        <div class="modal-head">
+          <div>
+            <h2>Save your recovery codes</h2>
+            <div class="target">One-time only — store these somewhere safe</div>
+          </div>
+        </div>
+
+        <div class="modal-body">
+          <div class="totp-recovery">
+            <p class="warning">
+              ⚠️ <strong>Save these codes now.</strong> Each one logs you in
+              once if you lose access to your authenticator app. They are
+              shown <strong>only this time</strong> — Passman keeps only a
+              hash on the server, so this list cannot be recovered later.
+            </p>
+            <div class="totp-recovery-grid">
+              <code class="totp-recovery-code">a4n2-mz8q</code>
+              <code class="totp-recovery-code">k7vb-6xwd</code>
+              <code class="totp-recovery-code">tr5g-9hjf</code>
+              <code class="totp-recovery-code">e3p1-cdm7</code>
+              <code class="totp-recovery-code">y8s4-uwq2</code>
+              <code class="totp-recovery-code">b6kn-rt3v</code>
+              <code class="totp-recovery-code">x9z2-fl5p</code>
+              <code class="totp-recovery-code">m1qa-7gjy</code>
+              <code class="totp-recovery-code">w4rh-d8ke</code>
+              <code class="totp-recovery-code">o2vc-px6n</code>
+            </div>
+            <div class="totp-recovery-actions">
+              <button type="button" class="btn">Copy all</button>
+              <button type="button" class="btn">Download as .txt</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-foot">
+          <span class="spacer"></span>
+          <button type="button" class="btn btn-primary">I've saved them — finish</button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
