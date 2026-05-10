@@ -135,18 +135,11 @@ jobs:
       - name: Build web
         run: npm run build --workspace=@passman/web
 
-      # NOTE: @passman/extension's `build` script invokes `vite build`, but
-      # the package has no vite.config.ts. Vite falls back to SPA mode and
-      # fails with "Could not resolve entry module 'index.html'". Producing
-      # a loadable MV3 extension needs a multi-entry config (background,
-      # content, popup) plus a static-copy plugin for manifest.json. That
-      # is dedicated work tracked for a follow-up; until then, the
-      # extension's correctness is enforced by:
-      #   - `tsc --noEmit` in the typecheck step above
-      #   - the @crxjs/vite-plugin or equivalent migration (Phase 2)
-      # Skipping `npm run build --workspace=@passman/extension` here
-      # rather than masking it with `|| true` keeps the failure visible
-      # and the CI signal honest.
+      # The extension now ships with a Vite multi-entry config (background,
+      # content, popup) plus a manifest-copy plugin. Building here verifies
+      # the bundle Chrome would `Load unpacked` against doesn't regress.
+      - name: Build extension
+        run: npm run build --workspace=@passman/extension
 
       - name: Test (all workspaces)
         run: npm run test --workspaces --if-present

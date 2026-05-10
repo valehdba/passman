@@ -3,12 +3,14 @@ import { useEffect } from "react";
 import {
   buildConnectCommand,
   buildJdbcUrl,
+  buildSshKeyCommand,
   buildSshUrl,
   buildTargetSubtitle,
   canBuildRdp,
   copyPlain,
   copySensitive,
   downloadRdpFile,
+  downloadSshKey,
   effectiveProtocol,
   engineCode,
   launchSshUrl,
@@ -48,6 +50,8 @@ export function ConnectDialog({ item, onClose, onUsed, onToast }: Props) {
   const jdbcUrl = supportsJdbc(protocol) ? buildJdbcUrl(p) : null;
   const sshUrl = buildSshUrl(p);
   const cmd = buildConnectCommand(p);
+  const sshKeyCmd = buildSshKeyCommand(p);
+  const hasKey = !!p.privateKey;
   // RDP is offered only when the credential is itself an RDP entry. For a
   // Postgres credential on port 5432 we'd otherwise generate an .rdp file
   // pointing at port 5432, which doesn't run RDP — that's a bug, not a
@@ -96,6 +100,19 @@ export function ConnectDialog({ item, onClose, onUsed, onToast }: Props) {
     }
     if (p.password) await copySensitive(p.password);
     done(".rdp downloaded · password on clipboard, clears in 30 s");
+  }
+
+  async function handleSshKey() {
+    if (!hasKey || !sshKeyCmd) return;
+    const ok = downloadSshKey(p);
+    if (!ok) {
+      onToast("No private key set on this credential");
+      return;
+    }
+    // Push the matching `ssh -i ...` command on the clipboard so the user
+    // can paste it after they've moved the .pem into ~/.ssh/passman/.
+    await copyPlain(sshKeyCmd);
+    done("Key downloaded · ssh -i command copied — move .pem to ~/.ssh/passman/ then paste");
   }
 
   return (
@@ -163,6 +180,24 @@ export function ConnectDialog({ item, onClose, onUsed, onToast }: Props) {
             hint="Downloads a pre-filled .rdp · password copied to clipboard, paste at the credential prompt"
             cta="Download .rdp"
             onClick={handleRdp}
+          />
+
+          <Option
+            disabled={!hasKey || !sshKeyCmd}
+            icon={<IconLock />}
+            title={hasKey ? "Connect with SSH key" : "Use SSH private key"}
+            meta={
+              hasKey
+                ? sshKeyCmd ?? "Add hostname to enable"
+                : "No key attached — add one in Edit"
+            }
+            hint={
+              hasKey
+                ? "Downloads the .pem · ssh -i command copied to clipboard"
+                : "Paste a PEM-encoded private key in the credential's Edit screen to enable this"
+            }
+            cta={hasKey ? "Download .pem" : "Set up"}
+            onClick={handleSshKey}
           />
         </div>
 

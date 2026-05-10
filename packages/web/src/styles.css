@@ -528,6 +528,18 @@ aside.vault-side {
   color: var(--muted);
   font-size: 0.7rem;
 }
+.user-card-action {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--brand);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.user-card-action:hover { color: #4adba0; }
 
 /* =============================================================================
    Vault page — main column
@@ -682,8 +694,14 @@ main.vault-main {
     90px                                /* env */
     90px                                /* last used */
     110px                               /* connect */
-    40px;                               /* kebab */
+    72px;                               /* edit + delete */
   font-size: 0.83rem;
+}
+.row-actions {
+  display: flex !important;
+  gap: 0.15rem;
+  padding-left: 0.4rem !important;
+  padding-right: 0.4rem !important;
 }
 /* Base cell styling for header AND row cells.
    Excluding `.row` itself prevents `display: flex` from clobbering its
@@ -945,6 +963,22 @@ main.vault-main {
   font-family: inherit;
 }
 
+/* SSH key textarea — appears for ssh-protocol credentials only */
+.ssh-key-input {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  resize: vertical;
+  min-height: 110px;
+}
+.ssh-key-hint {
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--muted-2);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
 /* Storage-location toggle in the Add form */
 .storage-toggle {
   display: grid;
@@ -1011,6 +1045,108 @@ main.vault-main {
   color: var(--fg-2);
   font-weight: 500;
 }
+
+/* Password generator — inline popover under the password input */
+.pw-field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.pw-field-gen-toggle {
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  color: var(--brand);
+  font-family: inherit;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.pw-field-gen-toggle:hover { background: var(--brand-soft); }
+
+.pw-gen {
+  margin: 0.85rem 0 0.5rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg-deep);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+.pw-gen-output {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.7rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.pw-gen-value {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 0.92rem;
+  color: var(--fg);
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+.pw-gen-meter { display: flex; align-items: center; gap: 0.6rem; }
+.pw-gen-meter-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line);
+  overflow: hidden;
+}
+.pw-gen-meter-fill {
+  height: 100%;
+  background: var(--danger);
+  transition: width 0.15s ease, background 0.15s ease;
+}
+.pw-gen-meter[data-strength="fair"] .pw-gen-meter-fill { background: var(--warn); }
+.pw-gen-meter[data-strength="strong"] .pw-gen-meter-fill { background: var(--brand); }
+.pw-gen-meter[data-strength="excellent"] .pw-gen-meter-fill {
+  background: linear-gradient(90deg, var(--brand) 0%, #67e8f9 100%);
+}
+.pw-gen-meter-label {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+.pw-gen-row { display: flex; flex-wrap: wrap; gap: 0.85rem; align-items: center; }
+.pw-gen-length {
+  display: flex;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.pw-gen-length strong { color: var(--fg); font-variant-numeric: tabular-nums; min-width: 1.2rem; }
+.pw-gen-length input[type="range"] { flex: 1; accent-color: var(--brand); }
+.pw-gen-checks { gap: 0.85rem; }
+.pw-gen-checks label {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--fg);
+  font-size: 0.78rem;
+  font-family: var(--mono);
+}
+.pw-gen-checks input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--brand);
+  cursor: pointer;
+  padding: 0;
+}
+.pw-gen-actions { display: flex; gap: 0.5rem; }
 
 /* Per-row "Device" badge in the grid Name cell. Sized to slot inside the
    flex `.name-row`; flex-shrink:0 prevents it from being squeezed by the
@@ -1193,6 +1329,75 @@ main.vault-main {
   padding: 0.3rem 0.7rem;
   border-radius: 5px;
   cursor: pointer;
+}
+
+/* Import dialog — file picker + parsed-row preview */
+.vault-headrow-actions { display: flex; gap: 0.5rem; align-items: center; }
+.import-step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.import-hint {
+  font-size: 0.84rem;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.45;
+}
+.import-hint strong { color: var(--fg-2); font-weight: 500; }
+.import-summary {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--fg-2);
+}
+.import-list {
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-deep);
+}
+.import-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.83rem;
+}
+.import-row:last-child { border-bottom: none; }
+.import-row-name { font-weight: 600; color: var(--fg); flex-shrink: 0; }
+.import-row-meta {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.import-row.import-row-more {
+  color: var(--muted);
+  font-style: italic;
+  justify-content: center;
+}
+.import-skipped {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.import-skipped summary { cursor: pointer; padding: 0.4rem 0; }
+.import-skipped ul {
+  margin: 0;
+  padding: 0.4rem 1rem;
+  background: var(--bg-deep);
+  border-radius: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.import-progress {
+  font-size: 0.85rem;
+  color: var(--brand);
+  font-family: var(--mono);
 }
 
 /* Toast (clipboard copied / cleared) — slides up from bottom-right */
