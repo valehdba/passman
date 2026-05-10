@@ -148,6 +148,38 @@ export async function deleteLocalItem(id: string): Promise<boolean> {
   });
 }
 
+export interface UpdateLocalParams {
+  id: string;
+  item_type?: string;
+  encrypted_data?: string;
+}
+
+/**
+ * Patch fields on an existing local record. Bumps `updated_at`. Returns
+ * the new full record; throws if the id doesn't exist (so callers see
+ * the same error semantics as the server's 404 on update).
+ */
+export async function updateLocalItem(
+  params: UpdateLocalParams,
+): Promise<LocalItemRecord> {
+  return tx("readwrite", async (store) => {
+    const existing = (await reqAsPromise(store.get(params.id))) as
+      | LocalItemRecord
+      | undefined;
+    if (!existing) {
+      throw new Error(`Local item not found: ${params.id}`);
+    }
+    const next: LocalItemRecord = {
+      ...existing,
+      item_type: params.item_type ?? existing.item_type,
+      encrypted_data: params.encrypted_data ?? existing.encrypted_data,
+      updated_at: new Date().toISOString(),
+    };
+    await reqAsPromise(store.put(next));
+    return next;
+  });
+}
+
 /** Wipe every record in every vault — used by tests and "Forget all local data" flows. */
 export async function clearLocalStore(): Promise<void> {
   await tx("readwrite", (store) => reqAsPromise(store.clear()));

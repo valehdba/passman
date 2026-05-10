@@ -16,6 +16,7 @@ import {
   deleteLocalItem,
   listLocalItems,
   type LocalItemRecord,
+  updateLocalItem,
 } from "./local.js";
 
 export type StorageLocation = "server" | "local";
@@ -107,4 +108,41 @@ export async function deleteItem(
     return;
   }
   await api.deleteItem(accessToken, id);
+}
+
+export interface UpdateParams {
+  accessToken: string;
+  id: string;
+  location: StorageLocation;
+  item_type?: string;
+  encrypted_data?: string;
+}
+
+/**
+ * Re-encrypt + update an existing item in the store it lives in. The
+ * `location` tag from `listAll` decides whether we PATCH the server or
+ * `put()` the local store record.
+ *
+ * We deliberately do NOT support moving items between stores here —
+ * server↔local migration is its own (atomicity-sensitive) operation
+ * and a follow-up feature.
+ */
+export async function updateItem(params: UpdateParams): Promise<LocatedItem> {
+  if (params.location === "local") {
+    const row = await updateLocalItem({
+      id: params.id,
+      ...(params.item_type !== undefined ? { item_type: params.item_type } : {}),
+      ...(params.encrypted_data !== undefined
+        ? { encrypted_data: params.encrypted_data }
+        : {}),
+    });
+    return localToVaultItem(row);
+  }
+  const updated = await api.updateItem(params.accessToken, params.id, {
+    ...(params.item_type !== undefined ? { item_type: params.item_type } : {}),
+    ...(params.encrypted_data !== undefined
+      ? { encrypted_data: params.encrypted_data }
+      : {}),
+  });
+  return { ...updated, location: "server" };
 }

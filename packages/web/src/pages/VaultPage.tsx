@@ -8,6 +8,7 @@ import {
 } from "@passman/core";
 
 import { api } from "../api/client.js";
+import { buildBackup, downloadBackup } from "../backup/index.js";
 import {
   effectiveProtocol,
   protocolLabel,
@@ -16,6 +17,7 @@ import {
   createItem as createStored,
   deleteItem as deleteStored,
   listAll as listAllStored,
+  updateItem as updateStored,
   type StorageLocation,
 } from "../storage/index.js";
 import { useSession } from "../stores/session.js";
@@ -23,6 +25,7 @@ import { AddCredentialForm } from "./vault/AddCredentialForm.js";
 import { ConnectDialog } from "./vault/ConnectDialog.js";
 import { CredentialsGrid } from "./vault/CredentialsGrid.js";
 import { IconLock, IconSearch } from "./vault/icons.js";
+import { ImportDialog } from "./vault/ImportDialog.js";
 import { markUsed } from "./vault/lastUsed.js";
 import { Sidebar, type SidebarScope } from "./vault/Sidebar.js";
 import type { DecryptedItem } from "./vault/types.js";
@@ -77,6 +80,8 @@ export function VaultPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [connectingItem, setConnectingItem] = useState<DecryptedItem | null>(null);
   const [adding, setAdding] = useState(false);
+  const [editingItem, setEditingItem] = useState<DecryptedItem | null>(null);
+  const [importing, setImporting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<number | null>(null);
 
@@ -149,6 +154,54 @@ export function VaultPage() {
         ? "Credential added — stored on this device only"
         : "Credential added",
     );
+  }
+
+  /** One-shot save used by the Import dialog — doesn't refresh the grid
+   *  between imports so a 200-row import doesn't trigger 200 re-loads. */
+  async function onImportOne(
+    plaintext: VaultLoginPlaintext,
+    location: StorageLocation,
+  ) {
+    if (!accessToken || !vault || !email) return;
+    const encoded = await encryptVaultLogin(plaintext, vault);
+    await createStored({
+      accessToken,
+      vault: email,
+      item_type: encoded.itemType,
+      encrypted_data: encoded.encryptedData,
+      location,
+    });
+  }
+
+  async function onSaveEdit(
+    plaintext: VaultLoginPlaintext,
+    location: StorageLocation,
+  ) {
+    if (!accessToken || !vault || !editingItem) return;
+    const encoded = await encryptVaultLogin(plaintext, vault);
+    await updateStored({
+      accessToken,
+      id: editingItem.id,
+      location,
+      item_type: encoded.itemType,
+      encrypted_data: encoded.encryptedData,
+    });
+    setEditingItem(null);
+    await loadItems();
+    showToast("Credential updated");
+  }
+
+  function onExport() {
+    if (!email) return;
+    if (items.length === 0) {
+      showToast("Nothing to export — vault is empty");
+      return;
+    }
+    // We export the underlying ciphertext blobs, NOT the decrypted view.
+    // The backup file is unreadable without the master password.
+    const backup = buildBackup(email, items);
+    downloadBackup(backup);
+    showToast(`Exported ${items.length} encrypted item(s) to a JSON file`);
   }
 
   async function onLogout() {
@@ -262,6 +315,7 @@ export function VaultPage() {
         items={items}
         scope={scope}
         onScopeChange={setScope}
+        onExport={onExport}
       />
 
       <main className="vault-main">
@@ -299,9 +353,14 @@ export function VaultPage() {
               <span className="dot" /> <span>Decrypted in your browser</span>
             </p>
           </div>
-          <button className="btn btn-primary" onClick={() => setAdding(true)}>
-            + New credential
-          </button>
+          <div className="vault-headrow-actions">
+            <button className="btn btn-ghost" onClick={() => setImporting(true)}>
+              ↥ Import
+            </button>
+            <button className="btn btn-primary" onClick={() => setAdding(true)}>
+              + New credential
+            </button>
+          </div>
         </div>
 
         <div className="vault-toolbar">
@@ -361,15 +420,30 @@ export function VaultPage() {
               markUsed(it.id);
               setConnectingItem(it);
             }}
+            onEdit={(it) => {
+              setAdding(false);
+              setEditingItem(it);
+            }}
             onDelete={onDelete}
             onToast={showToast}
           />
         )}
 
-        {adding && (
+        {adding && !editingItem && (
           <AddCredentialForm
             onSubmit={onAdd}
             onCancel={() => setAdding(false)}
+          />
+        )}
+
+        {editingItem && (
+          <AddCredentialForm
+            initial={{
+              plaintext: editingItem.plaintext,
+              location: editingItem.location,
+            }}
+            onSubmit={onSaveEdit}
+            onCancel={() => setEditingItem(null)}
           />
         )}
       </main>
@@ -380,6 +454,17 @@ export function VaultPage() {
         onUsed={(id) => markUsed(id)}
         onToast={showToast}
       />
+
+      {importing && (
+        <ImportDialog
+          onSaveOne={onImportOne}
+          onClose={async () => {
+            setImporting(false);
+            await loadItems();
+            showToast("Import complete");
+          }}
+        />
+      )}
 
       {toast && (
         <div className="toast" role="status">

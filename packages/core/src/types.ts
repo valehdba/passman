@@ -66,6 +66,13 @@ export interface VaultLoginPlaintext {
   domain?: string;
   /** Free-form environment label shown as a row tag (e.g. "prod", "staging"). */
   environment?: string;
+  /**
+   * SSH private key (PEM-encoded). When set the Connect dialog offers a
+   * "Use SSH key" action that downloads the key as `<name>.pem`. The blob
+   * is encrypted with the same vault key as the rest of the credential —
+   * the server never sees its contents.
+   */
+  privateKey?: string;
   notes?: string;
   /** otpauth:// URI for TOTP, optional. */
   totp?: string;

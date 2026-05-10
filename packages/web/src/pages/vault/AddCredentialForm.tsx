@@ -4,6 +4,7 @@ import type { Protocol, VaultLoginPlaintext } from "@passman/core";
 
 import { defaultPort, inferProtocolFromPort } from "../../connect/index.js";
 import type { StorageLocation } from "../../storage/index.js";
+import { PasswordGenerator } from "./PasswordGenerator.js";
 
 interface DraftState {
   name: string;
@@ -18,6 +19,7 @@ interface DraftState {
   domain: string;
   environment: string;
   url: string;
+  privateKey: string;
 }
 
 const EMPTY_DRAFT: DraftState = {
@@ -33,6 +35,7 @@ const EMPTY_DRAFT: DraftState = {
   domain: "",
   environment: "",
   url: "",
+  privateKey: "",
 };
 
 const PROTOCOL_OPTIONS: { value: Protocol | ""; label: string }[] = [
@@ -51,13 +54,46 @@ const PROTOCOL_OPTIONS: { value: Protocol | ""; label: string }[] = [
 ];
 
 interface Props {
+  /**
+   * If `initial` is provided, the form switches into Edit mode: the
+   * storage-location toggle is hidden (you can't move items between
+   * stores from here), the heading and submit button change, and the
+   * onSubmit callback receives the original `location` so the parent
+   * routes the update to the right store.
+   */
+  initial?: {
+    plaintext: VaultLoginPlaintext;
+    location: StorageLocation;
+  };
   onSubmit: (item: VaultLoginPlaintext, location: StorageLocation) => Promise<void>;
   onCancel: () => void;
 }
 
-export function AddCredentialForm({ onSubmit, onCancel }: Props) {
-  const [draft, setDraft] = useState<DraftState>(EMPTY_DRAFT);
+function draftFromPlaintext(p: VaultLoginPlaintext): DraftState {
+  return {
+    name: p.name,
+    username: p.username,
+    password: p.password,
+    hostname: p.hostname ?? "",
+    ip: p.ip ?? "",
+    port: p.port !== undefined ? String(p.port) : "",
+    protocol: p.protocol ?? "",
+    database: p.database ?? "",
+    serviceName: p.serviceName ?? "",
+    domain: p.domain ?? "",
+    environment: p.environment ?? "",
+    url: p.url ?? "",
+    privateKey: p.privateKey ?? "",
+  };
+}
+
+export function AddCredentialForm({ initial, onSubmit, onCancel }: Props) {
+  const isEdit = initial !== undefined;
+  const [draft, setDraft] = useState<DraftState>(
+    initial ? draftFromPlaintext(initial.plaintext) : EMPTY_DRAFT,
+  );
   const [storeLocally, setStoreLocally] = useState(false);
+  const [genOpen, setGenOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -77,6 +113,8 @@ export function AddCredentialForm({ onSubmit, onCancel }: Props) {
   const isOracle = draft.protocol === "oracle";
   const isRdp =
     draft.protocol === "rdp" || numOrUndef(draft.port) === 3389;
+  const isSsh =
+    draft.protocol === "ssh" || numOrUndef(draft.port) === 22;
 
   async function onFormSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -97,12 +135,29 @@ export function AddCredentialForm({ onSubmit, onCancel }: Props) {
         ...(draft.domain ? { domain: draft.domain } : {}),
         ...(draft.environment ? { environment: draft.environment } : {}),
         ...(draft.url ? { url: draft.url } : {}),
+        ...(draft.privateKey.trim() ? { privateKey: draft.privateKey } : {}),
       };
-      await onSubmit(cleaned, storeLocally ? "local" : "server");
-      setDraft(EMPTY_DRAFT);
-      setStoreLocally(false);
+      // In edit mode the storage location is fixed to where the item lives;
+      // moving items between stores is a separate operation we deliberately
+      // don't support from this form.
+      const location = isEdit
+        ? initial!.location
+        : storeLocally
+          ? "local"
+          : "server";
+      await onSubmit(cleaned, location);
+      if (!isEdit) {
+        setDraft(EMPTY_DRAFT);
+        setStoreLocally(false);
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Failed to add credential");
+      setErr(
+        e instanceof Error
+          ? e.message
+          : isEdit
+            ? "Failed to update credential"
+            : "Failed to add credential",
+      );
     } finally {
       setBusy(false);
     }
@@ -110,7 +165,7 @@ export function AddCredentialForm({ onSubmit, onCancel }: Props) {
 
   return (
     <form className="add-form" onSubmit={onFormSubmit}>
-      <h2>New credential</h2>
+      <h2>{isEdit ? `Edit ${initial!.plaintext.name}` : "New credential"}</h2>
 
       <div className="add-form-grid">
         <label>
@@ -185,8 +240,18 @@ export function AddCredentialForm({ onSubmit, onCancel }: Props) {
             placeholder="postgres"
           />
         </label>
-        <label>
-          Password
+        <label className="pw-field">
+          <span className="pw-field-label-row">
+            Password
+            <button
+              type="button"
+              className="pw-field-gen-toggle"
+              onClick={() => setGenOpen((v) => !v)}
+              title="Generate a strong password"
+            >
+              {genOpen ? "Hide generator" : "Generate"}
+            </button>
+          </span>
           <input
             type="password"
             value={draft.password}
@@ -205,6 +270,16 @@ export function AddCredentialForm({ onSubmit, onCancel }: Props) {
           </label>
         )}
       </div>
+
+      {genOpen && (
+        <PasswordGenerator
+          onPick={(pw) => {
+            setDraft({ ...draft, password: pw });
+            setGenOpen(false);
+          }}
+          onClose={() => setGenOpen(false)}
+        />
+      )}
 
       {(isDb || isOracle) && (
         <div className="add-form-grid">
@@ -242,31 +317,56 @@ export function AddCredentialForm({ onSubmit, onCancel }: Props) {
         </label>
       </div>
 
-      <label className={`storage-toggle ${storeLocally ? "on" : ""}`}>
-        <input
-          type="checkbox"
-          checked={storeLocally}
-          onChange={(e) => setStoreLocally(e.target.checked)}
-        />
-        <span className="storage-toggle-body">
-          <span className="storage-toggle-title">
-            Store on this device only
+      {isSsh && (
+        <div className="add-form-grid full-row">
+          <label>
+            SSH private key (PEM)
+            <textarea
+              className="ssh-key-input"
+              value={draft.privateKey}
+              onChange={(e) => setDraft({ ...draft, privateKey: e.target.value })}
+              placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;…&#10;-----END OPENSSH PRIVATE KEY-----"
+              rows={6}
+              spellCheck={false}
+              autoCorrect="off"
+              autoCapitalize="off"
+            />
+            <span className="ssh-key-hint">
+              Optional. Encrypted with the same vault key as the password —
+              the server never sees plaintext. Used by the Connect dialog to
+              offer a "Download .pem" path with an `ssh -i` command.
+            </span>
+          </label>
+        </div>
+      )}
+
+      {!isEdit && (
+        <label className={`storage-toggle ${storeLocally ? "on" : ""}`}>
+          <input
+            type="checkbox"
+            checked={storeLocally}
+            onChange={(e) => setStoreLocally(e.target.checked)}
+          />
+          <span className="storage-toggle-body">
+            <span className="storage-toggle-title">
+              Store on this device only
+            </span>
+            <span className="storage-toggle-hint">
+              Encrypted ciphertext stays in this browser's IndexedDB · never sent to the server.
+              <br />
+              <strong>No cross-device sync</strong> · cleared if you clear site data ·
+              single point of failure if this disk dies. Use for credentials you never
+              want stored remotely, even encrypted.
+            </span>
           </span>
-          <span className="storage-toggle-hint">
-            Encrypted ciphertext stays in this browser's IndexedDB · never sent to the server.
-            <br />
-            <strong>No cross-device sync</strong> · cleared if you clear site data ·
-            single point of failure if this disk dies. Use for credentials you never
-            want stored remotely, even encrypted.
-          </span>
-        </span>
-      </label>
+        </label>
+      )}
 
       {err && <p className="error">{err}</p>}
 
       <div className="add-form-actions">
         <button type="submit" disabled={busy}>
-          {busy ? "Saving…" : "Save"}
+          {busy ? "Saving…" : isEdit ? "Save changes" : "Save"}
         </button>
         <button type="button" onClick={onCancel}>Cancel</button>
       </div>

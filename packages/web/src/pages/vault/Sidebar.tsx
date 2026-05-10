@@ -21,9 +21,10 @@ interface Props {
   items: DecryptedItem[];
   scope: SidebarScope | null;
   onScopeChange: (scope: SidebarScope | null) => void;
+  onExport: () => void;
 }
 
-export function Sidebar({ email, items, scope, onScopeChange }: Props) {
+export function Sidebar({ email, items, scope, onScopeChange, onExport }: Props) {
   const [filter, setFilter] = useState("");
   const branding = useBranding();
 
@@ -137,7 +138,14 @@ export function Sidebar({ email, items, scope, onScopeChange }: Props) {
             {email ?? "Unknown"}
           </div>
           <small>
-            Vault unlocked
+            <button
+              type="button"
+              className="user-card-action"
+              onClick={onExport}
+              title="Download an encrypted JSON backup of your whole vault"
+            >
+              Export backup
+            </button>
             {branding.supportEmail && (
               <>
                 {" · "}

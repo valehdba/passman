@@ -268,15 +268,108 @@ When ticked:
 The toggle defaults to off, so existing zero-knowledge guarantees apply
 to everyone who doesn't opt in.
 
+### 5b. Generate a strong password
+
+Click **Generate** next to the Password field to open the inline generator:
+
+- **Length** slider (6–64). Default 20.
+- Toggles for `a–z`, `A–Z`, `0–9`, symbols, and *No 0/O/1/l* (drops
+  visually-confusable characters — useful for passwords you'll read aloud).
+- Live **strength meter** showing entropy bits and a label
+  (`weak` / `fair` / `strong` / `excellent`) — backed by Shannon entropy
+  (length × log₂(alphabet)).
+- **Use this password** stamps the value into the Password field; **↻**
+  re-rolls without closing the popover.
+
+The CSPRNG is the browser's `crypto.getRandomValues`. Rejection sampling
+ensures every char in the alphabet has equal probability — `% length`
+would skew toward the start of the alphabet for non-power-of-two charsets.
+
+Your last-used options persist to localStorage so you don't re-tick the
+same boxes every time.
+
+### 5c. Import from another vault
+
+Click **↥ Import** in the page header to open the import dialog. v1
+supports **Bitwarden CSV** (the most common export format).
+
+In Bitwarden: **Tools → Export vault → File format CSV**. The export
+contains plaintext passwords — keep the file on this device, import it
+in Passman, and delete it.
+
+The dialog parses the file, shows you a preview of the importable rows
+plus any rows it skipped (with reasons), and lets you confirm. There's
+also a **Store all imported items on this device only** toggle if you
+want the whole batch local-only.
+
+What gets mapped: `name`, `login_username`, `login_password`,
+`login_uri`, `notes`, `login_totp`. Folders and unknown columns are
+silently dropped. Non-login items (notes, cards, identities) are
+skipped — Passman only stores logins today.
+
+### 5d. SSH private-key field
+
+For SSH-protocol credentials, the form grows an **SSH private key
+(PEM)** textarea below the URL field. Paste any of:
+
+- `-----BEGIN OPENSSH PRIVATE KEY-----`
+- `-----BEGIN RSA PRIVATE KEY-----`
+- `-----BEGIN EC PRIVATE KEY-----`
+- `-----BEGIN PRIVATE KEY-----`
+
+The key is encrypted with the same vault key as the password — the
+server never sees its contents. Once attached, the Connect dialog's
+**Connect with SSH key** option becomes active: it downloads the key
+as `<name>.pem` and copies a matching command to the clipboard:
+
+```
+ssh -i ~/.ssh/passman/<name>.pem user@host [-p port]
+```
+
+Move the downloaded `.pem` into `~/.ssh/passman/` (chmod `600`), paste
+the command, and connect.
+
+### 5e. Edit an existing credential
+
+Hover any row → click the **✎** icon next to the delete button. The
+form opens in Edit mode with all current fields pre-filled. The
+storage-location toggle is hidden (you can't move items between stores
+from the form — that's a separate operation we deliberately defer).
+Click **Save changes** to re-encrypt and persist.
+
+For local-only items, the update writes a new IndexedDB record. For
+server items, it issues `PATCH /api/vault/items/:id`.
+
+### 5f. Export your vault
+
+Click **Export backup** in the user card at the bottom of the sidebar.
+Passman builds a JSON file containing every encrypted blob (server +
+local) plus metadata, then downloads it as
+`passman-<vault>-<YYYYMMDD>.json`. The file is unreadable without your
+master password — the vault key never leaves the browser.
+
+Use this for: disaster-recovery snapshots, migration between
+self-hosted instances, before clearing site data.
+
+The file shape is intentionally stable (`{ format, version, vault,
+items: [...] }`) so a future Restore flow can consume it without a
+schema bump.
+
 ---
 
 ## 6. Chrome extension
 
-> ⚠️ The extension's runtime code typechecks cleanly, but a loadable
-> Chrome bundle requires a Vite multi-entry config that is tracked for a
-> follow-up. The screenshots below show the popup as it will appear once
-> the extension is loadable. The web vault remains the primary client
-> for now.
+The extension is now buildable and loadable. From the repo root:
+
+```bash
+npm install
+npm run build --workspace=@passman/core      # core types must build first
+npm run build --workspace=@passman/extension # produces packages/extension/dist/
+```
+
+Then in Chrome / Edge / Brave: `chrome://extensions` → toggle
+**Developer mode** → **Load unpacked** → pick
+`packages/extension/dist/`. The Passman icon appears in your toolbar.
 
 ### 6a. Locked popup
 

@@ -14,6 +14,7 @@ import {
   createLocalItem,
   deleteLocalItem,
   listLocalItems,
+  updateLocalItem,
 } from "../src/storage/local.js";
 
 describe("local IndexedDB store", () => {
@@ -121,6 +122,29 @@ describe("local IndexedDB store", () => {
       "updated_at",
       "vault",
     ]);
+  });
+
+  it("updates an existing record's ciphertext + bumps updated_at", async () => {
+    const created = await createLocalItem({
+      vault: "v",
+      item_type: "login",
+      encrypted_data: "old-blob",
+    });
+    // Force a millisecond gap so updated_at differs.
+    await new Promise((r) => setTimeout(r, 5));
+    const updated = await updateLocalItem({
+      id: created.id,
+      encrypted_data: "new-blob",
+    });
+    expect(updated.encrypted_data).toBe("new-blob");
+    expect(updated.created_at).toBe(created.created_at);
+    expect(updated.updated_at > created.updated_at).toBe(true);
+  });
+
+  it("update throws when the id doesn't exist", async () => {
+    await expect(
+      updateLocalItem({ id: "no-such-id", encrypted_data: "x" }),
+    ).rejects.toThrow(/not found/);
   });
 
   it("accepts a vault that contains an empty string but not records that share an id", async () => {

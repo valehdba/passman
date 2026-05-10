@@ -106,6 +106,16 @@ export const api = {
       body: JSON.stringify(body),
     }, token),
 
+  updateItem: (
+    token: string,
+    id: string,
+    body: { item_type?: string; encrypted_data?: string },
+  ) =>
+    request<VaultItem>(`/vault/items/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }, token),
+
   deleteItem: (token: string, id: string) =>
     request<void>(`/vault/items/${id}`, { method: "DELETE" }, token),
 };

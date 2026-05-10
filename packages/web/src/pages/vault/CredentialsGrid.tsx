@@ -15,6 +15,7 @@ interface Props {
   onToggleSelect: (id: string) => void;
   onToggleSelectAll: () => void;
   onConnect: (item: DecryptedItem) => void;
+  onEdit: (item: DecryptedItem) => void;
   onDelete: (id: string) => void;
   onToast: (msg: string) => void;
 }
@@ -25,6 +26,7 @@ export function CredentialsGrid({
   onToggleSelect,
   onToggleSelectAll,
   onConnect,
+  onEdit,
   onDelete,
   onToast,
 }: Props) {
@@ -74,6 +76,7 @@ export function CredentialsGrid({
             selected={selectedIds.has(it.id)}
             onToggleSelect={onToggleSelect}
             onConnect={onConnect}
+            onEdit={onEdit}
             onDelete={onDelete}
             onToast={onToast}
           />
@@ -88,6 +91,7 @@ interface RowProps {
   selected: boolean;
   onToggleSelect: (id: string) => void;
   onConnect: (item: DecryptedItem) => void;
+  onEdit: (item: DecryptedItem) => void;
   onDelete: (id: string) => void;
   onToast: (msg: string) => void;
 }
@@ -97,6 +101,7 @@ function Row({
   selected,
   onToggleSelect,
   onConnect,
+  onEdit,
   onDelete,
   onToast,
 }: RowProps) {
@@ -213,7 +218,16 @@ function Row({
         </button>
       </div>
 
-      <div data-col="">
+      <div data-col="" className="row-actions">
+        <button
+          type="button"
+          className="kebab"
+          aria-label="Edit row"
+          title="Edit"
+          onClick={() => onEdit(item)}
+        >
+          ✎
+        </button>
         <button
           type="button"
           className="kebab"
