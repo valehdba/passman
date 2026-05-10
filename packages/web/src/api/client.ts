@@ -39,6 +39,31 @@ export interface TokenPair {
   encrypted_symmetric_key: string;
 }
 
+/** `POST /sessions` returns this when the user has 2FA enabled — phase-1
+ *  only. The client must follow up with `POST /sessions/otp` carrying the
+ *  same `otp_token` plus a 6-digit code (or a recovery code). */
+export interface OtpChallenge {
+  requires_otp: true;
+  otp_token: string;
+  otp_expires_in: number;
+}
+
+export type LoginResponse = TokenPair | OtpChallenge;
+
+export function isOtpChallenge(r: LoginResponse): r is OtpChallenge {
+  return (r as OtpChallenge).requires_otp === true;
+}
+
+export interface TotpStatus {
+  enabled: boolean;
+  recovery_codes_remaining: number;
+}
+
+export interface TotpSetup {
+  provisioning_uri: string;
+  secret_base32: string;
+}
+
 export interface VaultItem {
   id: string;
   item_type: string;
@@ -83,10 +108,36 @@ export const api = {
     request<KdfLookup>(`/accounts/kdf?email=${encodeURIComponent(email)}`),
 
   login: (email: string, authKey: string) =>
-    request<TokenPair>("/sessions", {
+    request<LoginResponse>("/sessions", {
       method: "POST",
       body: JSON.stringify({ email, auth_key: authKey }),
     }),
+
+  loginOtp: (otpToken: string, code: string) =>
+    request<TokenPair>("/sessions/otp", {
+      method: "POST",
+      body: JSON.stringify({ otp_token: otpToken, code }),
+    }),
+
+  totpStatus: (token: string) =>
+    request<TotpStatus>("/account/totp/status", {}, token),
+
+  totpSetup: (token: string) =>
+    request<TotpSetup>("/account/totp/setup", { method: "POST" }, token),
+
+  totpConfirm: (token: string, code: string) =>
+    request<{ recovery_codes: string[] }>(
+      "/account/totp/confirm",
+      { method: "POST", body: JSON.stringify({ code }) },
+      token,
+    ),
+
+  totpDisable: (token: string, code: string) =>
+    request<void>(
+      "/account/totp/disable",
+      { method: "POST", body: JSON.stringify({ code }) },
+      token,
+    ),
 
   logout: (token: string, refreshToken: string) =>
     request<void>("/sessions", {

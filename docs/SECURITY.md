@@ -14,8 +14,34 @@
 | Vault item plaintext       | ❌ never           | Only the client (with master password) decrypts |
 | Item count                 | ✅                 | Acceptable leak                                |
 | Item type (login/note/...) | ✅                 | Acceptable leak                                |
+| TOTP shared secret (opt-in)| ✅ when 2FA enabled| RFC 6238 verifier requires the secret — see below |
+| TOTP recovery codes        | ❌ Argon2id-hashed | Plaintext shown to user once, never persisted  |
 
 ## Threats considered
+
+### Optional TOTP (2FA) — what it changes
+
+Enabling 2FA adds a per-user TOTP secret (RFC 4226 / 6238) to the
+`users` row. **This is the one server-stored secret that vault data is
+not derived from.** Crucially:
+
+- **Vault contents stay zero-knowledge.** A breach that leaks both the
+  auth_key hash and the TOTP secret still does **not** enable vault
+  decryption — the symmetric key is encrypted with the master key, and
+  the master key is never on the server.
+- **Login auth widens by one secret.** An attacker who exfiltrates the
+  TOTP secret can compute valid OTPs for that user and bypass the 2FA
+  challenge — but they still need the master password to get past the
+  first factor and to actually decrypt anything.
+- **Recovery codes are stored as Argon2id hashes**, identical posture to
+  the auth_key hash. A leak of the recovery-codes column does not
+  enable login.
+- **Disable always requires a fresh code** (current OTP or recovery
+  code). A stolen access token alone can't downgrade the auth posture.
+
+If you need a true zero-knowledge second factor, leave TOTP off and use
+the upcoming WebAuthn / passkey path (tracked) which uses public-key
+crypto — the server only stores the public key, never a verifier secret.
 
 ### Database breach
 Attacker pulls a full dump. They have: emails, Argon2 hashes of auth keys,

@@ -138,13 +138,17 @@ export function Sidebar({ email, items, scope, onScopeChange, onExport }: Props)
             {email ?? "Unknown"}
           </div>
           <small>
+            <a href="/settings" className="user-card-action">
+              Settings
+            </a>
+            {" · "}
             <button
               type="button"
               className="user-card-action"
               onClick={onExport}
               title="Download an encrypted JSON backup of your whole vault"
             >
-              Export backup
+              Export
             </button>
             {branding.supportEmail && (
               <>

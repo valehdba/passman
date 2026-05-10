@@ -15,7 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .routers import accounts, sessions, vault
+from .routers import account, accounts, sessions, vault
 
 logger = logging.getLogger("passman")
 
@@ -49,6 +49,7 @@ def create_app() -> FastAPI:
     app.include_router(accounts.router)
     app.include_router(sessions.router)
     app.include_router(vault.router)
+    app.include_router(account.router)
 
     @app.get("/healthz", tags=["meta"])
     async def healthz() -> dict[str, str]:

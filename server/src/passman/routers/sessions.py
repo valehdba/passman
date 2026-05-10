@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import uuid
 from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 
@@ -13,6 +14,8 @@ from sqlalchemy.exc import NoResultFound
 from ..auth import (
     auth_hash_needs_rehash,
     create_access_token,
+    create_otp_challenge_token,
+    decode_otp_challenge_token,
     generate_refresh_token,
     hash_auth_key,
     hash_refresh_token,
@@ -23,7 +26,15 @@ from ..deps import CurrentUserDep, SessionDep
 from ..errors import InvalidCredentialsError, InvalidTokenError
 from ..models import Session as SessionModel
 from ..models import User
-from ..schemas import LoginRequest, RefreshRequest, RefreshResponse, TokenPair
+from ..schemas import (
+    LoginRequest,
+    OtpChallengeResponse,
+    OtpLoginRequest,
+    RefreshRequest,
+    RefreshResponse,
+    TokenPair,
+)
+from ..totp import consume_recovery_code, verify as verify_totp
 
 logger = logging.getLogger(__name__)
 
@@ -39,13 +50,45 @@ def _ensure_aware(dt: datetime) -> datetime:
     return dt if dt.tzinfo is not None else dt.replace(tzinfo=UTC)
 
 
-@router.post("", response_model=TokenPair, status_code=status.HTTP_201_CREATED)
+async def _issue_token_pair(
+    user: User, session: SessionDep, user_agent: str | None
+) -> TokenPair:
+    """Mint access + refresh, persist the session row. Shared by phase-1
+    (no-2FA users) and phase-2 (after-OTP) login paths."""
+    raw_refresh, refresh_hash, refresh_ttl = generate_refresh_token()
+    access_token, access_ttl = create_access_token(str(user.id))
+
+    db_session = SessionModel(
+        user_id=user.id,
+        refresh_token_hash=refresh_hash,
+        expires_at=_utcnow() + timedelta(seconds=refresh_ttl),
+        user_agent=(user_agent or "")[:255],
+    )
+    session.add(db_session)
+    await session.flush()
+
+    return TokenPair(
+        access_token=access_token,
+        refresh_token=raw_refresh,
+        access_expires_in=access_ttl,
+        refresh_expires_in=refresh_ttl,
+        encrypted_symmetric_key=user.encrypted_symmetric_key,
+    )
+
+
+@router.post(
+    "",
+    response_model=TokenPair | OtpChallengeResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def login(
     payload: LoginRequest,
     session: SessionDep,
     user_agent: str | None = Header(default=None, alias="User-Agent"),
-) -> TokenPair:
-    """Verify the auth_key and issue access + refresh tokens.
+) -> TokenPair | OtpChallengeResponse:
+    """Verify the auth_key. If 2FA is on, return an OTP challenge token
+    instead of the full token pair — the client then POSTs `/sessions/otp`
+    with the same token + a code to complete login.
 
     The unknown-user branch runs :func:`verify_dummy_auth_key` so the wall-time
     matches the wrong-password branch — closing the timing oracle that would
@@ -76,25 +119,68 @@ async def login(
             # convert a legitimate login into a 5xx.
             logger.warning("auth_hash rehash failed for user_id=%s", user.id, exc_info=True)
 
-    raw_refresh, refresh_hash, refresh_ttl = generate_refresh_token()
-    access_token, access_ttl = create_access_token(str(user.id))
+    # 2FA gate — if enabled, hand back an OTP challenge token and stop.
+    if user.totp_enabled:
+        otp_token, otp_ttl = create_otp_challenge_token(str(user.id))
+        return OtpChallengeResponse(otp_token=otp_token, otp_expires_in=otp_ttl)
 
-    db_session = SessionModel(
-        user_id=user.id,
-        refresh_token_hash=refresh_hash,
-        expires_at=_utcnow() + timedelta(seconds=refresh_ttl),
-        user_agent=(user_agent or "")[:255],
-    )
-    session.add(db_session)
-    await session.flush()
+    return await _issue_token_pair(user, session, user_agent)
 
-    return TokenPair(
-        access_token=access_token,
-        refresh_token=raw_refresh,
-        access_expires_in=access_ttl,
-        refresh_expires_in=refresh_ttl,
-        encrypted_symmetric_key=user.encrypted_symmetric_key,
-    )
+
+@router.post(
+    "/otp",
+    response_model=TokenPair,
+    status_code=status.HTTP_201_CREATED,
+)
+async def login_otp(
+    payload: OtpLoginRequest,
+    session: SessionDep,
+    user_agent: str | None = Header(default=None, alias="User-Agent"),
+) -> TokenPair:
+    """Phase-2 of two-step login. Accepts the `otp_token` minted by
+    :func:`login` plus a 6-digit authenticator code OR a single-use
+    recovery code, then issues the full token pair.
+
+    The OTP path verifies against the stored `totp_secret`; the
+    recovery-code path verifies against the JSON-list of Argon2id-hashed
+    codes and atomically strips the consumed entry.
+    """
+    from jose import JWTError
+
+    try:
+        claims = decode_otp_challenge_token(payload.otp_token)
+    except JWTError as e:
+        raise InvalidTokenError("OTP challenge token invalid or expired") from e
+
+    user_id_raw = claims.get("sub")
+    if not user_id_raw:
+        raise InvalidTokenError("OTP challenge token malformed")
+    try:
+        user_id = uuid.UUID(user_id_raw)
+    except (ValueError, TypeError) as e:
+        raise InvalidTokenError("OTP challenge token malformed") from e
+
+    user = await session.get(User, user_id)
+    if user is None or not user.totp_enabled:
+        # If 2FA was disabled between phase-1 and phase-2, the challenge
+        # is meaningless; force a fresh login.
+        raise InvalidTokenError("OTP challenge token invalid or expired")
+
+    # Try the rolling TOTP code first — overwhelmingly the common path.
+    accepted = False
+    if user.totp_secret is not None and verify_totp(user.totp_secret, payload.code):
+        accepted = True
+    elif user.totp_recovery_hashes:
+        matched, remaining = consume_recovery_code(user.totp_recovery_hashes, payload.code)
+        if matched:
+            accepted = True
+            user.totp_recovery_hashes = remaining
+            await session.flush()
+
+    if not accepted:
+        raise InvalidCredentialsError("Invalid OTP code")
+
+    return await _issue_token_pair(user, session, user_agent)
 
 
 @router.post("/refresh", response_model=RefreshResponse)
