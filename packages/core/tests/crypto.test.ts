@@ -8,7 +8,7 @@ import {
   generateSymmetricKey,
   importAesKey,
 } from "../src/crypto.js";
-import { fromBase64, randomBytes, toBase64 } from "../src/encoding.js";
+import { randomBytes, toBase64 } from "../src/encoding.js";
 
 async function freshKey() {
   return importAesKey(generateSymmetricKey());
