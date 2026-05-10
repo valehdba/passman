@@ -51,9 +51,7 @@ def _ensure_aware(dt: datetime) -> datetime:
     return dt if dt.tzinfo is not None else dt.replace(tzinfo=UTC)
 
 
-async def _issue_token_pair(
-    user: User, session: SessionDep, user_agent: str | None
-) -> TokenPair:
+async def _issue_token_pair(user: User, session: SessionDep, user_agent: str | None) -> TokenPair:
     """Mint access + refresh, persist the session row. Shared by phase-1
     (no-2FA users) and phase-2 (after-OTP) login paths."""
     raw_refresh, refresh_hash, refresh_ttl = generate_refresh_token()
