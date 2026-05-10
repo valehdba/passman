@@ -15,6 +15,7 @@ login flow unchanged for users who haven't opted in.
 from __future__ import annotations
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "0002_totp"

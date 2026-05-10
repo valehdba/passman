@@ -34,7 +34,8 @@ from ..schemas import (
     RefreshResponse,
     TokenPair,
 )
-from ..totp import consume_recovery_code, verify as verify_totp
+from ..totp import consume_recovery_code
+from ..totp import verify as verify_totp
 
 logger = logging.getLogger(__name__)
 

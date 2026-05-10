@@ -55,7 +55,9 @@ class User(Base, TimestampMixin):
     # `totp_enabled` flips to true after the user confirms with a valid first
     # code. Until then, the secret is provisional and login still works
     # without OTP — protects users who started setup but never completed.
-    totp_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    totp_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
     # Argon2id-hashed single-use recovery codes (10 by default), JSON-encoded
     # list of PHC strings. NULL when 2FA is disabled.
     totp_recovery_hashes: Mapped[str | None] = mapped_column(Text, nullable=True)

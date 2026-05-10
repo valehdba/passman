@@ -18,8 +18,8 @@ import json
 import secrets
 import struct
 import time
+from collections.abc import Iterable
 from hashlib import sha1
-from typing import Iterable
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
@@ -28,7 +28,7 @@ from argon2.exceptions import VerifyMismatchError
 SECRET_BYTES = 20
 PERIOD_SECONDS = 30
 DIGITS = 6
-# Number of recovery codes generated when 2FA is enabled. Industry norm is 8–10.
+# Number of recovery codes generated when 2FA is enabled. Industry norm is 8 to 10.
 RECOVERY_CODE_COUNT = 10
 # Codes are formatted as `xxxx-xxxx` (8 chars + dash) — readable + unambiguous.
 RECOVERY_CODE_BYTES = 5  # 5 bytes -> 8 base32 chars (no padding)
@@ -169,16 +169,21 @@ def consume_recovery_code(stored_hashes_json: str, code: str) -> tuple[bool, str
     except (ValueError, TypeError):
         return False, None
     cleaned = code.lower().strip().replace(" ", "")
+    import logging
+
+    log = logging.getLogger(__name__)
     for i, h in enumerate(hashes):
         try:
             if _recovery_hasher.verify(h, cleaned):
                 remaining = hashes[:i] + hashes[i + 1 :]
                 return True, json.dumps(remaining)
         except VerifyMismatchError:
+            # Wrong code — try the next stored hash.
             continue
         except Exception:
             # Argon2 raises a few non-VerifyMismatch errors for malformed
-            # hashes — treat as "no match" and keep going so a single
-            # corrupt entry doesn't lock out the user.
+            # hashes; we log + skip so a single corrupt entry doesn't lock
+            # out the user.
+            log.warning("recovery-code hash %d unparseable, skipping", i, exc_info=True)
             continue
     return False, None

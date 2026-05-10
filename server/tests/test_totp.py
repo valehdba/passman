@@ -18,7 +18,6 @@ from passman import totp
 
 from .conftest import make_register_payload
 
-
 # ---------------------------------------------------------------------------
 # Pure-function tests (no DB / no HTTP)
 # ---------------------------------------------------------------------------
