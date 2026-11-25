@@ -92,4 +92,4 @@ async def test_logout_revokes_refresh_token(client) -> None:  # type: ignore[no-
 @pytest.mark.asyncio
 async def test_logout_requires_auth(client) -> None:  # type: ignore[no-untyped-def]
     resp = await client.request("DELETE", "/api/sessions", json={"refresh_token": "anything"})
-    assert resp.status_code == 403  # HTTPBearer auto_error -> 403 by default
+    assert resp.status_code == 401  # HTTPBearer auto_error -> 401 (fastapi>=0.122)

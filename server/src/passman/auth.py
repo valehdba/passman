@@ -28,11 +28,14 @@ from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from typing import Any
 
+import jwt
 from argon2 import PasswordHasher
 from argon2 import exceptions as argon2_exc
-from jose import JWTError, jwt
 
 from .config import get_settings
+
+# Single exception type callers catch for any invalid/expired/forged token.
+JWTError = jwt.PyJWTError
 
 # A non-secret constant used to seed the dummy hash. Its value never matters —
 # only that the resulting PHC string parses cleanly under the hasher's current
@@ -162,9 +165,10 @@ def decode_access_token(token: str) -> dict[str, Any]:
         token,
         settings.jwt_secret.get_secret_value(),
         algorithms=[settings.jwt_algorithm],
+        options={"require": ["exp", "sub"]},
     )
     if payload.get("type") != "access":
-        raise JWTError("Invalid token type")
+        raise jwt.InvalidTokenError("Invalid token type")
     return payload
 
 
@@ -201,9 +205,10 @@ def decode_otp_challenge_token(token: str) -> dict[str, Any]:
         token,
         settings.jwt_secret.get_secret_value(),
         algorithms=[settings.jwt_algorithm],
+        options={"require": ["exp", "sub"]},
     )
     if payload.get("type") != "otp_challenge":
-        raise JWTError("Invalid token type")
+        raise jwt.InvalidTokenError("Invalid token type")
     return payload
 
 

@@ -144,7 +144,7 @@ async def login_otp(
     recovery-code path verifies against the JSON-list of Argon2id-hashed
     codes and atomically strips the consumed entry.
     """
-    from jose import JWTError
+    from ..auth import JWTError
 
     try:
         claims = decode_otp_challenge_token(payload.otp_token)

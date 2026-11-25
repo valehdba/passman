@@ -88,7 +88,7 @@ async def delete_item(
 async def _load_owned_item(
     session: SessionDep,
     user_id: uuid.UUID,
-    item_id: uuid.UUID,  # type: ignore[valid-type]
+    item_id: uuid.UUID,
 ) -> VaultItem:
     stmt = select(VaultItem).where(VaultItem.id == item_id, VaultItem.user_id == user_id)
     item = (await session.execute(stmt)).scalar_one_or_none()
