@@ -22,7 +22,7 @@ dependencies = [
     "email-validator==2.2.0",
     # python-multipart 0.0.19 had three CVEs (CVE-2026-24486, -40347, -42561);
     # 0.0.27 is the lowest version that clears all three.
-    "python-multipart==0.0.27",
+    "python-multipart==0.0.31",
 ]
 
 [project.optional-dependencies]
