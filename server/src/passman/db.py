@@ -25,7 +25,7 @@ def _make_engine() -> AsyncEngine:
     if not settings.database_url.startswith("sqlite"):
         kwargs["pool_size"] = 10
         kwargs["max_overflow"] = 20
-    return create_async_engine(settings.database_url, **kwargs)  # type: ignore[arg-type]
+    return create_async_engine(settings.database_url, **kwargs)
 
 
 engine: AsyncEngine = _make_engine()

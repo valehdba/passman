@@ -7,11 +7,10 @@ from typing import Annotated
 
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .auth import decode_access_token
+from .auth import JWTError, decode_access_token
 from .db import get_session
 from .errors import InvalidTokenError
 from .models import User

@@ -57,50 +57,11 @@ jobs:
           wc -l /tmp/runtime-reqs.txt
 
       - name: Audit runtime deps (gate)
-        # `--strict` makes unparseable advisories hard fails. The
-        # `--ignore-vuln` entries below are tracked exceptions:
-        #
-        #   CVE-2025-54121, CVE-2025-62727 — starlette, transitive via
-        #     fastapi==0.115.5. Cleared by starlette 0.47.2+ / 0.49.1+
-        #     respectively, which require a fastapi major bump. Tracked
-        #     for Phase 2 (fastapi upgrade).
-        #
-        #   CVE-2026-30922 — pyasn1 0.4.8, transitive via python-jose 3.4.0
-        #     which hard-pins pyasn1<0.5. Cleared by pyasn1 0.6.3, which
-        #     requires migrating off python-jose (Phase 2).
-        #
-        #   PYSEC-2026-{161,248,249,1941,1942,2280,2281} — further starlette
-        #     advisories on the same fastapi==0.115.5 pin; same Phase 2 fix.
-        #
-        #   CVE-2026-1191{94..97}, PYSEC-2026-{2263,3455,3456,3457} — pyasn1,
-        #     same python-jose pin as CVE-2026-30922.
-        #
-        #   PYSEC-2026-4298 (python-jose), PYSEC-2026-1325 (ecdsa) — no fixed
-        #     release exists; cleared only by migrating to pyjwt/authlib.
-        #
-        # Each exception MUST have a tracking issue and a removal target.
-        run: |
-          pip-audit --strict -r /tmp/runtime-reqs.txt \
-            --ignore-vuln CVE-2025-54121 \
-            --ignore-vuln CVE-2025-62727 \
-            --ignore-vuln CVE-2026-30922 \
-            --ignore-vuln PYSEC-2026-161 \
-            --ignore-vuln PYSEC-2026-248 \
-            --ignore-vuln PYSEC-2026-249 \
-            --ignore-vuln PYSEC-2026-1941 \
-            --ignore-vuln PYSEC-2026-1942 \
-            --ignore-vuln PYSEC-2026-2280 \
-            --ignore-vuln PYSEC-2026-2281 \
-            --ignore-vuln CVE-2026-119194 \
-            --ignore-vuln CVE-2026-119195 \
-            --ignore-vuln CVE-2026-119196 \
-            --ignore-vuln CVE-2026-119197 \
-            --ignore-vuln PYSEC-2026-2263 \
-            --ignore-vuln PYSEC-2026-3455 \
-            --ignore-vuln PYSEC-2026-3456 \
-            --ignore-vuln PYSEC-2026-3457 \
-            --ignore-vuln PYSEC-2026-4298 \
-            --ignore-vuln PYSEC-2026-1325
+        # `--strict` makes unparseable advisories hard fails. There are no
+        # tracked exceptions right now; if one is ever needed, add an
+        # `--ignore-vuln <ID>` with a comment naming the tracking issue and
+        # a removal target.
+        run: pip-audit --strict -r /tmp/runtime-reqs.txt
 
       - name: Install dev deps
         working-directory: server

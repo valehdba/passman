@@ -89,7 +89,7 @@ async def test_users_cannot_see_each_others_items(client) -> None:  # type: igno
 @pytest.mark.asyncio
 async def test_vault_requires_auth(client) -> None:  # type: ignore[no-untyped-def]
     resp = await client.get("/api/vault/items")
-    assert resp.status_code == 403
+    assert resp.status_code == 401
 
 
 @pytest.mark.asyncio
