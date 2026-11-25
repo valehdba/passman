@@ -34,10 +34,12 @@ jobs:
           fi
 
           echo "Checking range: $range"
-          bad=$(git log "$range" --pretty=format:'%ae' | grep -v -i '^valeh\.agayev@gmail\.com$' || true)
+          # Dependabot commits are authored by the bot's noreply address.
+          allowed='^(valeh\.agayev@gmail\.com|[0-9]+\+dependabot\[bot\]@users\.noreply\.github\.com|dependabot\[bot\]@users\.noreply\.github\.com)$'
+          bad=$(git log "$range" --pretty=format:'%ae' | grep -v -i -E "$allowed" || true)
           if [ -n "$bad" ]; then
             echo "::error::Commits from disallowed authors found:"
-            git log "$range" --pretty=format:'%h %ae %s' | grep -v -i 'valeh\.agayev@gmail\.com'
+            git log "$range" --pretty=format:'%h %ae %s' | grep -v -i -E "dependabot|valeh\.agayev@gmail\.com"
             echo ""
             echo "Project policy: every commit must be authored by valeh.agayev@gmail.com (valehdba)."
             exit 1
