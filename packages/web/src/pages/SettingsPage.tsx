@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { ApiError, api, type TotpStatus } from "../api/client.js";
 import { useBranding } from "../branding/index.js";
+import { PROTOCOL_VALUES, usePreferences } from "../stores/preferences.js";
 import { useSession } from "../stores/session.js";
 import { TotpSetupFlow } from "./settings/TotpSetupFlow.js";
 import { BrandHeader } from "./vault/BrandHeader.js";
 
 /**
- * Settings page — v1 hosts only the 2FA management flow. The page is
+ * Settings page — hosts 2FA management and local preferences. The page is
  * intentionally simple: a single Security section with status + actions.
  * As more settings land they slot in as additional sections.
  */
@@ -72,8 +73,10 @@ export function SettingsPage() {
         )}
       </section>
 
+      <PreferencesSection />
+
       <p className="settings-back">
-        <a href="/vault">← Back to vault</a>
+        <Link to="/vault">← Back to vault</Link>
       </p>
 
       {setupOpen && accessToken && (
@@ -223,5 +226,119 @@ function DisableTotpDialog({
         </div>
       </div>
     </div>
+  );
+}
+
+const AUTO_LOCK_OPTIONS = [
+  { value: 0, label: "Never" },
+  { value: 1, label: "1 minute" },
+  { value: 5, label: "5 minutes" },
+  { value: 15, label: "15 minutes" },
+  { value: 30, label: "30 minutes" },
+  { value: 60, label: "1 hour" },
+];
+
+const CLIPBOARD_OPTIONS = [
+  { value: 0, label: "Never" },
+  { value: 10, label: "10 seconds" },
+  { value: 30, label: "30 seconds" },
+  { value: 60, label: "1 minute" },
+  { value: 120, label: "2 minutes" },
+];
+
+/** Options list that always contains the current value (e.g. one set by an older build). */
+function withCurrent(
+  options: { value: number; label: string }[],
+  current: number,
+  unit: string,
+) {
+  return options.some((o) => o.value === current)
+    ? options
+    : [...options, { value: current, label: `${current} ${unit}` }].sort(
+        (a, b) => a.value - b.value,
+      );
+}
+
+function PreferencesSection() {
+  const { autoLockMinutes, clipboardClearSeconds, defaultProtocol, update, reset } =
+    usePreferences();
+
+  return (
+    <section className="settings-section">
+      <header>
+        <h2>Preferences</h2>
+        <p className="settings-section-hint">
+          Saved in this browser only — they are never sent to the server and do
+          not follow you to another device. Changes apply immediately.
+        </p>
+      </header>
+
+      <label className="settings-row">
+        <span>
+          <span className="settings-label">Auto-lock after inactivity</span>
+          <span className="settings-status-meta">
+            Locks the vault and returns to login when idle.
+          </span>
+        </span>
+        <select
+          value={autoLockMinutes}
+          onChange={(e) => update({ autoLockMinutes: Number(e.target.value) })}
+        >
+          {withCurrent(AUTO_LOCK_OPTIONS, autoLockMinutes, "min").map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="settings-row">
+        <span>
+          <span className="settings-label">Clear copied passwords</span>
+          <span className="settings-status-meta">
+            How long a copied password stays on the clipboard.
+          </span>
+        </span>
+        <select
+          value={clipboardClearSeconds}
+          onChange={(e) => update({ clipboardClearSeconds: Number(e.target.value) })}
+        >
+          {withCurrent(CLIPBOARD_OPTIONS, clipboardClearSeconds, "s").map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="settings-row">
+        <span>
+          <span className="settings-label">Default protocol</span>
+          <span className="settings-status-meta">
+            Pre-selected when adding a new credential.
+          </span>
+        </span>
+        <select
+          value={defaultProtocol}
+          onChange={(e) =>
+            update({ defaultProtocol: e.target.value as (typeof PROTOCOL_VALUES)[number] | "" })
+          }
+        >
+          <option value="">None</option>
+          {PROTOCOL_VALUES.map((p) => (
+            <option key={p} value={p}>
+              {p.toUpperCase()}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <div className="settings-row">
+        <span />
+        <button type="button" className="btn" onClick={reset}>
+          Reset to defaults
+        </button>
+      </div>
+    </section>
   );
 }

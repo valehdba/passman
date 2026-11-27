@@ -4,6 +4,7 @@ import type { Protocol, VaultLoginPlaintext } from "@passman/core";
 
 import { defaultPort, inferProtocolFromPort } from "../../connect/index.js";
 import type { StorageLocation } from "../../storage/index.js";
+import { usePreferences } from "../../stores/preferences.js";
 import { PasswordGenerator } from "./PasswordGenerator.js";
 
 interface DraftState {
@@ -20,6 +21,10 @@ interface DraftState {
   environment: string;
   url: string;
   privateKey: string;
+}
+
+function freshDraft(): DraftState {
+  return { ...EMPTY_DRAFT, protocol: usePreferences.getState().defaultProtocol };
 }
 
 const EMPTY_DRAFT: DraftState = {
@@ -90,7 +95,7 @@ function draftFromPlaintext(p: VaultLoginPlaintext): DraftState {
 export function AddCredentialForm({ initial, onSubmit, onCancel }: Props) {
   const isEdit = initial !== undefined;
   const [draft, setDraft] = useState<DraftState>(
-    initial ? draftFromPlaintext(initial.plaintext) : EMPTY_DRAFT,
+    initial ? draftFromPlaintext(initial.plaintext) : freshDraft(),
   );
   const [storeLocally, setStoreLocally] = useState(false);
   const [genOpen, setGenOpen] = useState(false);
@@ -147,7 +152,7 @@ export function AddCredentialForm({ initial, onSubmit, onCancel }: Props) {
           : "server";
       await onSubmit(cleaned, location);
       if (!isEdit) {
-        setDraft(EMPTY_DRAFT);
+        setDraft(freshDraft());
         setStoreLocally(false);
       }
     } catch (e) {

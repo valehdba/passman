@@ -6,6 +6,7 @@ import {
   buildSshKeyCommand,
   buildSshUrl,
   buildTargetSubtitle,
+  clipboardClearLabel,
   canBuildRdp,
   copyPlain,
   copySensitive,
@@ -78,7 +79,7 @@ export function ConnectDialog({ item, onClose, onUsed, onToast }: Props) {
     // browsers that suspend the page on protocol-handler invocation.
     if (p.password) await copySensitive(p.password);
     launchSshUrl(sshUrl);
-    done("Launching SSH · password on clipboard, clears in 30 s");
+    done(`Launching SSH · password on clipboard, ${clipboardClearLabel()}`);
   }
 
   async function handleCommand() {
@@ -99,7 +100,7 @@ export function ConnectDialog({ item, onClose, onUsed, onToast }: Props) {
       return;
     }
     if (p.password) await copySensitive(p.password);
-    done(".rdp downloaded · password on clipboard, clears in 30 s");
+    done(`.rdp downloaded · password on clipboard, ${clipboardClearLabel()}`);
   }
 
   async function handleSshKey() {

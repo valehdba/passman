@@ -1438,6 +1438,14 @@ main.settings-container {
   font-weight: 500;
   font-size: 0.92rem;
 }
+.settings-label {
+  display: block;
+  font-weight: 500;
+  font-size: 0.92rem;
+}
+.settings-row select {
+  min-width: 9.5rem;
+}
 .settings-status-meta {
   color: var(--muted);
   font-size: 0.78rem;
