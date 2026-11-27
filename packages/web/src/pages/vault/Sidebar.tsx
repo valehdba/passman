@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { useBranding } from "../../branding/index.js";
 import { effectiveProtocol, protocolLabel } from "../../connect/index.js";
@@ -138,9 +139,9 @@ export function Sidebar({ email, items, scope, onScopeChange, onExport }: Props)
             {email ?? "Unknown"}
           </div>
           <small>
-            <a href="/settings" className="user-card-action">
+            <Link to="/settings" className="user-card-action">
               Settings
-            </a>
+            </Link>
             {" · "}
             <button
               type="button"

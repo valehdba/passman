@@ -16,4 +16,4 @@ export {
   looksLikePem,
 } from "./sshkey.js";
 export { buildRdpFile, downloadRdpFile } from "./rdp.js";
-export { copySensitive, copyPlain, CLIPBOARD_CLEAR_MS } from "./clipboard.js";
+export { copySensitive, copyPlain, clipboardClearLabel, CLIPBOARD_CLEAR_MS } from "./clipboard.js";

@@ -5,7 +5,7 @@ import {
   engineCode,
   protocolLabel,
 } from "../../connect/index.js";
-import { copyPlain, copySensitive } from "../../connect/clipboard.js";
+import { clipboardClearLabel, copyPlain, copySensitive } from "../../connect/clipboard.js";
 import { formatRelative, getLastUsed } from "./lastUsed.js";
 import { envClass, type DecryptedItem } from "./types.js";
 
@@ -118,7 +118,7 @@ function Row({
   async function copyPassword(e: React.MouseEvent) {
     e.stopPropagation();
     await copySensitive(p.password);
-    onToast("Password copied · clears in 30 s");
+    onToast(`Password copied · ${clipboardClearLabel()}`);
   }
 
   async function copyHost(e: React.MouseEvent) {
