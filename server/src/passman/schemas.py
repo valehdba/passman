@@ -211,3 +211,24 @@ class TrustedDeviceOut(BaseModel):
     created_at: datetime
     last_used_at: datetime | None
     expires_at: datetime
+
+
+# ------------------------------------------------------------------ SSH gateway
+
+
+class SshTicketRequest(BaseModel):
+    """Target of an in-browser shell. Credentials are NOT sent here; they travel
+    only in the first WebSocket frame."""
+
+    host: str = Field(min_length=1, max_length=253, pattern=r"^[A-Za-z0-9._:\-\[\]]+$")
+    port: int = Field(default=22, ge=1, le=65535)
+    username: str = Field(min_length=1, max_length=128, pattern=r"^[^\x00-\x1f]+$")
+
+
+class SshTicketResponse(BaseModel):
+    ticket: str
+    expires_in: int
+
+
+class SshConfigResponse(BaseModel):
+    enabled: bool

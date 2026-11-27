@@ -1,4 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+
+import { api } from "../../api/client.js";
+import { useSession } from "../../stores/session.js";
+import { TERMINAL_INIT, TERMINAL_READY } from "../TerminalPage.js";
 
 import {
   buildConnectCommand,
@@ -29,6 +33,21 @@ interface Props {
 }
 
 export function ConnectDialog({ item, onClose, onUsed, onToast }: Props) {
+  const accessToken = useSession((s) => s.accessToken);
+  // Whether the server's SSH gateway is enabled (SSH_ALLOWED_HOSTS non-empty).
+  const [shellEnabled, setShellEnabled] = useState(false);
+  useEffect(() => {
+    if (!item || !accessToken) return;
+    let live = true;
+    api
+      .sshConfig(accessToken)
+      .then((c) => live && setShellEnabled(c.enabled))
+      .catch(() => live && setShellEnabled(false));
+    return () => {
+      live = false;
+    };
+  }, [item, accessToken]);
+
   // Close on Escape — common modal expectation.
   useEffect(() => {
     if (!item) return;
@@ -69,6 +88,73 @@ export function ConnectDialog({ item, onClose, onUsed, onToast }: Props) {
     if (!jdbcUrl) return;
     await copyPlain(jdbcUrl);
     done("JDBC URL copied · use the row's Copy button for the password");
+  }
+
+  /**
+   * Open the in-browser shell in a new tab. window.open must run synchronously
+   * inside the click (popup blockers), so the tab opens first and the ticket +
+   * credential are handed over via postMessage once it announces itself.
+   */
+  async function handleShell() {
+    if (!accessToken) return;
+    const host = p.hostname || p.ip;
+    if (!host || !p.username || (!p.password && !p.privateKey)) return;
+    const opened = window.open("/terminal", "_blank");
+    if (!opened) {
+      onToast("Popup blocked — allow popups for this site to open the shell");
+      return;
+    }
+    const tab: Window = opened;
+    // Listen for the tab's "ready" BEFORE doing any async work: the tab can load
+    // (and announce itself) before the ticket request returns.
+    let stopListening = () => {};
+    const ready = new Promise<void>((resolve, reject) => {
+      const timer = window.setTimeout(() => {
+        stopListening();
+        reject(new Error("Terminal tab did not respond"));
+      }, 15_000);
+      function onMsg(e: MessageEvent) {
+        if (
+          e.origin === window.location.origin &&
+          e.source === tab &&
+          (e.data as { type?: string } | null)?.type === TERMINAL_READY
+        ) {
+          stopListening();
+          resolve();
+        }
+      }
+      stopListening = () => {
+        window.clearTimeout(timer);
+        window.removeEventListener("message", onMsg);
+      };
+      window.addEventListener("message", onMsg);
+    });
+    ready.catch(() => {}); // avoid an unhandled rejection if the ticket step fails first
+
+    try {
+      const port = p.port ?? 22;
+      const [{ ticket }] = await Promise.all([
+        api.sshTicket(accessToken, { host, port, username: p.username }),
+        ready,
+      ]);
+      tab.postMessage(
+        {
+          type: TERMINAL_INIT,
+          ticket,
+          host,
+          port,
+          username: p.username,
+          ...(p.password ? { password: p.password } : {}),
+          ...(p.privateKey ? { privateKey: p.privateKey } : {}),
+        },
+        window.location.origin,
+      );
+      done("Shell opened in a new tab");
+    } catch (e) {
+      stopListening();
+      tab.close();
+      onToast(e instanceof Error ? e.message : "Could not open the shell");
+    }
   }
 
   async function handleSsh() {
@@ -146,6 +232,22 @@ export function ConnectDialog({ item, onClose, onUsed, onToast }: Props) {
             cta={jdbcUrl ? "Copy URL" : "Unavailable"}
             onClick={handleJdbc}
           />
+
+          {shellEnabled && protocol === "ssh" && (
+            <Option
+              disabled={!(p.hostname || p.ip) || !p.username || (!p.password && !p.privateKey)}
+              icon={<IconTerminal />}
+              title="Open shell in new tab"
+              meta={
+                p.hostname || p.ip
+                  ? `${p.username || "user"}@${p.hostname || p.ip}:${p.port ?? 22}`
+                  : "Add hostname or IP to enable"
+              }
+              hint="Built-in terminal · the server connects on your behalf using the decrypted credential for this session only"
+              cta="Open shell"
+              onClick={() => void handleShell()}
+            />
+          )}
 
           <Option
             disabled={!sshUrl}

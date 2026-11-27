@@ -56,6 +56,19 @@ class Settings(BaseSettings):
     trusted_device_max_days: int = 90  # server-side cap on what a client may request
     trusted_device_max_per_user: int = 10  # oldest trust is evicted beyond this
 
+    # Directory for small persistent server-side state (e.g. pinned SSH host keys).
+    # Mount a volume here in Docker.
+    data_dir: str = ".passman-data"
+
+    # --- In-browser SSH terminal (server-side gateway) ---
+    # Hosts the gateway may connect to: IPs, CIDRs ("10.0.0.0/8"), hostnames
+    # ("db.corp.local") or wildcards ("*.corp.local"). EMPTY = feature disabled.
+    ssh_allowed_hosts: list[str] = Field(default_factory=list)
+    ssh_connect_timeout_seconds: int = 10
+    ssh_idle_timeout_seconds: int = 900
+    ssh_max_sessions_per_user: int = 3
+    ssh_tickets_per_minute: int = 10
+
     # --- CORS ---
     cors_origins: list[str] = Field(
         default_factory=lambda: ["http://localhost:5173", "chrome-extension://*"]
