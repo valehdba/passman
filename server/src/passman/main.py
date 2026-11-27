@@ -15,7 +15,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .routers import account, accounts, sessions, ssh, vault
+from .db_admin import apply_saved_connection_on_startup
+from .routers import account, accounts, admin, sessions, ssh, vault
 
 logger = logging.getLogger("passman")
 
@@ -25,6 +26,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     logging.basicConfig(level=settings.log_level)
     logger.info("starting passman in %s mode", settings.env)
+    await apply_saved_connection_on_startup()
     yield
     logger.info("shutting down")
 
@@ -51,6 +53,7 @@ def create_app() -> FastAPI:
     app.include_router(vault.router)
     app.include_router(account.router)
     app.include_router(ssh.router)
+    app.include_router(admin.router)
 
     @app.get("/healthz", tags=["meta"])
     async def healthz() -> dict[str, str]:

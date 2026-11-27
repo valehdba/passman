@@ -7,6 +7,7 @@ import { countLocalItems } from "../storage/index.js";
 import { PROTOCOL_VALUES, usePreferences } from "../stores/preferences.js";
 import { useSession } from "../stores/session.js";
 import { clearAllTrustTokens } from "../stores/trustedDevice.js";
+import { ServerDatabaseSection } from "./settings/ServerDatabaseSection.js";
 import { TotpSetupFlow } from "./settings/TotpSetupFlow.js";
 import { BrandHeader } from "./vault/BrandHeader.js";
 
@@ -76,6 +77,8 @@ export function SettingsPage() {
       </section>
 
       <DataSourceSection />
+
+      <ServerDatabaseSection />
 
       {status?.enabled && <TrustedDevicesSection />}
 

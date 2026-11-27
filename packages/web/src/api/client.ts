@@ -80,6 +80,33 @@ export interface SshTicket {
   expires_in: number;
 }
 
+export interface DbConnectionBody {
+  host: string;
+  port: number;
+  database: string;
+  username: string;
+  password: string;
+  sslmode: "disable" | "prefer" | "require";
+}
+
+export interface DbCheck {
+  ok: boolean;
+  server_version: string | null;
+  schema_state: "empty" | "current" | "outdated" | "unmanaged" | "unknown";
+  error: string | null;
+}
+
+export interface DbStatus {
+  source: "env" | "saved";
+  current: {
+    host: string;
+    port: number | null;
+    database: string;
+    username: string;
+    sslmode: string | null;
+  };
+}
+
 export interface VaultItem {
   id: string;
   item_type: string;
@@ -168,6 +195,26 @@ export const api = {
       { method: "POST", body: JSON.stringify(body) },
       token,
     ),
+
+  adminDbStatus: (token: string) =>
+    request<DbStatus>("/admin/database", {}, token),
+
+  adminDbTest: (token: string, body: DbConnectionBody) =>
+    request<DbCheck>(
+      "/admin/database/test",
+      { method: "POST", body: JSON.stringify(body) },
+      token,
+    ),
+
+  adminDbSwitch: (token: string, body: DbConnectionBody) =>
+    request<DbStatus>(
+      "/admin/database",
+      { method: "PUT", body: JSON.stringify({ ...body, confirm: true }) },
+      token,
+    ),
+
+  adminDbReset: (token: string) =>
+    request<DbStatus>("/admin/database", { method: "DELETE" }, token),
 
   totpStatus: (token: string) =>
     request<TotpStatus>("/account/totp/status", {}, token),

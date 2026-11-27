@@ -69,6 +69,14 @@ class Settings(BaseSettings):
     ssh_max_sessions_per_user: int = 3
     ssh_tickets_per_minute: int = 10
 
+    # --- Admin / runtime database switching ---
+    # Email of the one account allowed to change the server database from the
+    # UI. Empty disables the feature entirely. NOTE: registration does not
+    # verify email ownership, so register this account first.
+    admin_email: str = ""
+    # Alembic config used to migrate a newly selected database.
+    alembic_ini: str = "alembic.ini"
+
     # --- CORS ---
     cors_origins: list[str] = Field(
         default_factory=lambda: ["http://localhost:5173", "chrome-extension://*"]

@@ -15,6 +15,8 @@ dependencies = [
     "pyjwt==2.15.1",
     # Server-side SSH gateway for the in-browser terminal (EPL-2.0 OR GPL-2.0+).
     "asyncssh==2.24.1",
+    # Encrypts the saved database connection at rest (admin DB switching).
+    "cryptography==50.0.2",
     "email-validator==2.2.0",
     # python-multipart 0.0.19 had three CVEs (CVE-2026-24486, -40347, -42561);
     # 0.0.27 is the lowest version that clears all three.
