@@ -15,7 +15,10 @@ RUN pip install .
 COPY server/alembic.ini ./alembic.ini
 COPY server/alembic ./alembic
 
-RUN useradd --system --uid 10001 passman
+# Persistent dir for small server-side state (mount a volume here).
+RUN useradd --system --uid 10001 passman \
+ && mkdir /data && chown passman /data
+ENV DATA_DIR=/data
 USER passman
 
 EXPOSE 8000

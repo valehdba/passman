@@ -75,6 +75,11 @@ export interface TotpSetup {
   secret_base32: string;
 }
 
+export interface SshTicket {
+  ticket: string;
+  expires_in: number;
+}
+
 export interface VaultItem {
   id: string;
   item_type: string;
@@ -150,6 +155,19 @@ export const api = {
 
   revokeAllTrustedDevices: (token: string) =>
     request<void>("/account/trusted-devices", { method: "DELETE" }, token),
+
+  sshConfig: (token: string) =>
+    request<{ enabled: boolean }>("/ssh/config", {}, token),
+
+  sshTicket: (
+    token: string,
+    body: { host: string; port: number; username: string },
+  ) =>
+    request<SshTicket>(
+      "/ssh/tickets",
+      { method: "POST", body: JSON.stringify(body) },
+      token,
+    ),
 
   totpStatus: (token: string) =>
     request<TotpStatus>("/account/totp/status", {}, token),

@@ -42,9 +42,13 @@ services:
       SERVER_ARGON2_TIME_COST: ${SERVER_ARGON2_TIME_COST:-2}
       SERVER_ARGON2_MEMORY_COST: ${SERVER_ARGON2_MEMORY_COST:-19456}
       SERVER_ARGON2_PARALLELISM: ${SERVER_ARGON2_PARALLELISM:-1}
+      # In-browser SSH terminal: JSON list of allowed targets. Empty = disabled.
+      SSH_ALLOWED_HOSTS: ${SSH_ALLOWED_HOSTS:-[]}
       TRUSTED_DEVICE_DEFAULT_DAYS: ${TRUSTED_DEVICE_DEFAULT_DAYS:-30}
       TRUSTED_DEVICE_MAX_DAYS: ${TRUSTED_DEVICE_MAX_DAYS:-90}
       TRUSTED_DEVICE_MAX_PER_USER: ${TRUSTED_DEVICE_MAX_PER_USER:-10}
+    volumes:
+      - passman_data:/data
     ports:
       - "${API_PORT:-8000}:8000"
 
@@ -62,3 +66,4 @@ services:
 
 volumes:
   passman_pgdata:
+  passman_data:

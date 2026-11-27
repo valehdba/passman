@@ -198,6 +198,45 @@ containers with `docker compose up -d --no-deps api web`.
 Note: `DATABASE_URL` in `.env` is for running the API directly on the host;
 the containers use `API_DATABASE_URL`.
 
+### In-browser SSH terminal
+
+For a credential whose protocol is SSH, **Connect → Open shell in new tab** opens
+a built-in terminal (xterm.js) in a new browser tab. It is **off by default**.
+
+Enable it by listing the hosts the server may reach in `.env`, as a JSON array of
+IPs, CIDRs, hostnames or `*.wildcards`, then restart the API:
+
+```bash
+SSH_ALLOWED_HOSTS=["10.0.0.0/8","bastion.example.com","*.corp.local"]
+```
+
+How it works and what it means for security:
+
+- The API server opens the SSH connection on the user's behalf (asyncssh) and
+  streams the terminal over a WebSocket. **For that one session the decrypted
+  password / private key is sent to your server** (use TLS in production). It is
+  held in memory only, used for a single login, and never logged or stored. This
+  is the one place the server sees an SSH secret; the rest of the vault stays
+  zero-knowledge.
+- Because it lets users reach hosts *through the server*, it is deny-by-default:
+  anything not in `SSH_ALLOWED_HOSTS` is refused, and the allowlist is checked
+  again at connect time. Hostnames are resolved once and the validated IP is used.
+- Authorization is a single-use, 30-second ticket bound to the user and the exact
+  host/port/username; the credential goes only in the first WebSocket frame, never
+  in a URL.
+- Host keys are pinned on first use in `ssh_known_hosts.json` (the `passman_data`
+  volume). A changed key aborts **before** any credential is sent. To accept a
+  legitimately re-keyed host, remove its entry from that file.
+- Limits: 10 tickets/minute and 3 concurrent terminals per user, 15-minute idle
+  timeout (`SSH_TICKETS_PER_MINUTE`, `SSH_MAX_SESSIONS_PER_USER`,
+  `SSH_IDLE_TIMEOUT_SECONDS`). Each session writes an audit log line (user,
+  target, duration).
+- Tickets are held in memory, so run the API with a single worker (the default
+  image does).
+- The tab has no Passman session; the credential is handed over once via
+  `postMessage` (same-origin), so reloading the tab does not reconnect.
+- Behind your own reverse proxy, forward WebSocket upgrades for `/api/ssh/ws`.
+
 ## Configuration
 
 All configuration is via environment variables (12-factor). For local

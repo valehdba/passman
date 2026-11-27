@@ -1641,3 +1641,31 @@ label.trust-device select {
   font-size: 0.88rem;
   word-break: break-word;
 }
+
+/* In-browser SSH terminal tab */
+body:has(.terminal-page) { overflow: hidden; }
+.terminal-page {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #0e0f10;
+}
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.4rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+.terminal-title { color: var(--fg); }
+.terminal-hint { color: var(--muted); }
+.terminal-host {
+  flex: 1;
+  min-height: 0;
+  padding: 0.5rem 0 0 0.6rem;
+}
+.terminal-host .xterm { height: 100%; }
