@@ -237,6 +237,31 @@ How it works and what it means for security:
   `postMessage` (same-origin), so reloading the tab does not reconnect.
 - Behind your own reverse proxy, forward WebSocket upgrades for `/api/ssh/ws`.
 
+### Changing the server database from the app (admin)
+
+Set `ADMIN_EMAIL` in `.env` to enable **Settings → Server database** for that one
+account (empty = feature off, the default; everyone else gets 403 and sees
+nothing). Enter host/port/database/user/password/SSL, **Test connection**, tick
+the acknowledgement and **Switch database**.
+
+- The target must be PostgreSQL 14+ and either empty or a previous Passman
+  database. A database with foreign tables is refused. Passman's migrations are
+  applied to the target.
+- The previous database is **never modified, copied or deleted**. Accounts and
+  vault items stay in it; the new database starts with whatever it contains and
+  everyone is signed out.
+- The connection is saved **encrypted** (Fernet, key derived from `JWT_SECRET`,
+  file mode 0600) in the `passman_data` volume and overrides `API_DATABASE_URL`
+  across restarts. Rotating `JWT_SECRET` makes it unreadable and the server falls
+  back to `API_DATABASE_URL`.
+- **Reset to .env default** (shown when a saved connection is active) returns to
+  `API_DATABASE_URL` and removes the saved file.
+- Registration does not verify email ownership: register the admin account
+  first and enable 2FA on it. After switching to an *empty* database the admin
+  account no longer exists there; register it again immediately.
+- Locked out? `docker compose exec api rm /data/db_connection.enc` then
+  `docker compose restart api` returns to the `.env` database.
+
 ## Configuration
 
 All configuration is via environment variables (12-factor). For local

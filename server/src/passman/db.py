@@ -18,18 +18,41 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from .config import get_settings
 
 
-def _make_engine() -> AsyncEngine:
-    settings = get_settings()
+def make_engine(url: str) -> AsyncEngine:
+    """Build an async engine for ``url`` (pool tuning is skipped for SQLite)."""
     kwargs: dict[str, object] = {"echo": False, "pool_pre_ping": True}
     # SQLite (used in tests) doesn't support QueuePool tuning params.
-    if not settings.database_url.startswith("sqlite"):
+    if not url.startswith("sqlite"):
         kwargs["pool_size"] = 10
         kwargs["max_overflow"] = 20
-    return create_async_engine(settings.database_url, **kwargs)
+    return create_async_engine(url, **kwargs)
 
 
-engine: AsyncEngine = _make_engine()
-SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+class _Runtime:
+    """Holds the live engine/session factory so they can be swapped at runtime."""
+
+    def __init__(self, engine: AsyncEngine) -> None:
+        self.engine = engine
+        self.sessions = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+
+
+_runtime = _Runtime(make_engine(get_settings().database_url))
+
+
+def current_engine() -> AsyncEngine:
+    return _runtime.engine
+
+
+async def switch_engine(new_engine: AsyncEngine) -> None:
+    """Point the app at ``new_engine`` and dispose the previous one.
+
+    In-flight requests keep their already-open sessions; new requests use the
+    new engine. The old *database* is never modified.
+    """
+    old = _runtime.engine
+    _runtime.engine = new_engine
+    _runtime.sessions = async_sessionmaker(new_engine, expire_on_commit=False, class_=AsyncSession)
+    await old.dispose()
 
 
 class Base(DeclarativeBase):
@@ -51,7 +74,7 @@ class TimestampMixin:
 
 async def get_session() -> AsyncIterator[AsyncSession]:
     """FastAPI dependency yielding a session that commits on success, rolls back on error."""
-    async with SessionLocal() as session:
+    async with _runtime.sessions() as session:
         try:
             yield session
             await session.commit()

@@ -17,7 +17,15 @@ import uuid
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, EmailStr, Field, StringConstraints
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    EmailStr,
+    Field,
+    SecretStr,
+    StringConstraints,
+)
 
 
 def _normalize_email(value: object) -> object:
@@ -232,3 +240,34 @@ class SshTicketResponse(BaseModel):
 
 class SshConfigResponse(BaseModel):
     enabled: bool
+
+
+# --------------------------------------------------------------------- admin DB
+
+
+class DbConnectionIn(BaseModel):
+    """Connection parts for the admin "switch database" flow (PostgreSQL only)."""
+
+    host: str = Field(min_length=1, max_length=253, pattern=r"^[A-Za-z0-9._:\-\[\]]+$")
+    port: int = Field(ge=1, le=65535)
+    database: str = Field(min_length=1, max_length=63, pattern=r"^[^\x00-\x1f]+$")
+    username: str = Field(min_length=1, max_length=63, pattern=r"^[^\x00-\x1f]+$")
+    password: SecretStr = Field(max_length=256)
+    sslmode: Literal["disable", "prefer", "require"] = "prefer"
+
+
+class DbSwitchRequest(DbConnectionIn):
+    # Explicit acknowledgement that this affects every user of the instance.
+    confirm: bool = False
+
+
+class DbCheckResponse(BaseModel):
+    ok: bool
+    server_version: str | None = None
+    schema_state: str = "unknown"
+    error: str | None = None
+
+
+class DbStatusResponse(BaseModel):
+    source: Literal["env", "saved"]
+    current: dict[str, object]

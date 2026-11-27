@@ -47,6 +47,8 @@ services:
       TRUSTED_DEVICE_DEFAULT_DAYS: ${TRUSTED_DEVICE_DEFAULT_DAYS:-30}
       TRUSTED_DEVICE_MAX_DAYS: ${TRUSTED_DEVICE_MAX_DAYS:-90}
       TRUSTED_DEVICE_MAX_PER_USER: ${TRUSTED_DEVICE_MAX_PER_USER:-10}
+      # Only this account can change the server database from Settings. Empty = disabled.
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
     volumes:
       - passman_data:/data
     ports:

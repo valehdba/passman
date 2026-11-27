@@ -17,15 +17,17 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 settings = get_settings()
-# Inject DB URL from settings — sync alembic uses asyncpg too.
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# DB URL: an explicit override (set by the admin "switch database" flow) wins,
+# otherwise settings. `%` must be doubled for configparser interpolation.
+_db_url: str = config.attributes.get("database_url") or settings.database_url
+config.set_main_option("sqlalchemy.url", _db_url.replace("%", "%%"))
 
 target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
     context.configure(
-        url=settings.database_url,
+        url=_db_url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
