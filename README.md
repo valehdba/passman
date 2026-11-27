@@ -170,6 +170,34 @@ npm run typecheck --workspace=@passman/extension
 The extension is not currently loadable into Chrome from this repo. The
 web vault (step 5) is the primary client.
 
+## Docker deployment
+
+Run the whole stack (Postgres, API with automatic migrations, web vault):
+
+```bash
+cp .env.example .env          # set JWT_SECRET (openssl rand -hex 64)
+docker compose up -d --build
+# web vault: http://localhost:8080   API docs: http://localhost:8000/docs
+```
+
+Everything is configured from `.env` (see the "Docker deployment" block in
+`.env.example`); nothing is hard-coded in `docker-compose.yml`:
+
+| Variable | Default | Purpose |
+| -------- | ------- | ------- |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | `passman` | Bundled Postgres credentials. Only applied when the data volume is first created. |
+| `API_DATABASE_URL` | bundled Postgres | Async URL used by the API container. Set it to use an external database, URL-encoding special characters in the password. |
+| `WEB_PORT` / `API_PORT` / `POSTGRES_PORT` | `8080` / `8000` / `5432` | Host ports. |
+| `PASSMAN_ENV` | `development` | `production` rejects a default `JWT_SECRET`. |
+| `CORS_ORIGINS` | `["http://localhost:$WEB_PORT"]` | Must include the URL you open the vault at. |
+| `ACCESS_TOKEN_TTL_SECONDS`, `REFRESH_TOKEN_TTL_SECONDS`, `LOGIN_ATTEMPTS_PER_15MIN`, `SERVER_ARGON2_*`, `LOG_LEVEL` | see Tuning below | Passed through to the API. |
+
+Using an external database: set `API_DATABASE_URL`, then start only the app
+containers with `docker compose up -d --no-deps api web`.
+
+Note: `DATABASE_URL` in `.env` is for running the API directly on the host;
+the containers use `API_DATABASE_URL`.
+
 ## Configuration
 
 All configuration is via environment variables (12-factor). For local
