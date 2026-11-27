@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { ApiError, api, type TotpStatus, type TrustedDevice } from "../api/client.js";
 import { useBranding } from "../branding/index.js";
+import { countLocalItems } from "../storage/index.js";
 import { PROTOCOL_VALUES, usePreferences } from "../stores/preferences.js";
 import { useSession } from "../stores/session.js";
 import { clearAllTrustTokens } from "../stores/trustedDevice.js";
@@ -73,6 +74,8 @@ export function SettingsPage() {
           <TotpDisabledPanel onSetup={() => setSetupOpen(true)} />
         )}
       </section>
+
+      <DataSourceSection />
 
       {status?.enabled && <TrustedDevicesSection />}
 
@@ -461,6 +464,84 @@ function TrustedDevicesSection() {
           </div>
         </>
       )}
+    </section>
+  );
+}
+
+function DataSourceSection() {
+  const { accessToken, email } = useSession();
+  const defaultStorage = usePreferences((s) => s.defaultStorage);
+  const update = usePreferences((s) => s.update);
+  const [counts, setCounts] = useState<{ server: number | null; local: number | null }>({
+    server: null,
+    local: null,
+  });
+
+  useEffect(() => {
+    if (!accessToken || !email) return;
+    let live = true;
+    api
+      .listItems(accessToken)
+      .then((r) => live && setCounts((c) => ({ ...c, server: r.items.length })))
+      .catch(() => live && setCounts((c) => ({ ...c, server: -1 })));
+    countLocalItems(email)
+      .then((n) => live && setCounts((c) => ({ ...c, local: n })))
+      .catch(() => live && setCounts((c) => ({ ...c, local: -1 })));
+    return () => {
+      live = false;
+    };
+  }, [accessToken, email]);
+
+  const fmt = (n: number | null) =>
+    n === null ? "…" : n < 0 ? "unavailable" : `${n} ${n === 1 ? "item" : "items"}`;
+
+  return (
+    <section className="settings-section">
+      <header>
+        <h2>Data source</h2>
+        <p className="settings-section-hint">
+          Credentials are always encrypted in your browser first. Choose where the
+          ciphertext is kept: the <strong>server</strong> (synced, available on any
+          device you log in from) or <strong>this device only</strong> (browser
+          IndexedDB, never sent to the server).
+        </p>
+      </header>
+
+      <label className="settings-row">
+        <span>
+          <span className="settings-label">Default for new credentials</span>
+          <span className="settings-status-meta">
+            You can still override this per credential in the New credential form.
+          </span>
+        </span>
+        <select
+          value={defaultStorage}
+          onChange={(e) =>
+            update({ defaultStorage: e.target.value === "local" ? "local" : "server" })
+          }
+        >
+          <option value="server">Server (synced)</option>
+          <option value="local">This device only</option>
+        </select>
+      </label>
+
+      <div className="settings-row">
+        <span>
+          <span className="settings-label">Server vault</span>
+          <span className="settings-status-meta">PostgreSQL via the Passman API (/api)</span>
+        </span>
+        <span className="settings-count">{fmt(counts.server)}</span>
+      </div>
+
+      <div className="settings-row">
+        <span>
+          <span className="settings-label">This device</span>
+          <span className="settings-status-meta">
+            Lost if you clear this browser's site data — use Export to back up.
+          </span>
+        </span>
+        <span className="settings-count">{fmt(counts.local)}</span>
+      </div>
     </section>
   );
 }
