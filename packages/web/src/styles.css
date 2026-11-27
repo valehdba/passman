@@ -1604,3 +1604,40 @@ main.settings-container {
     min-width: 80px;
   }
 }
+
+/* Login: "Trust this device" on the OTP step */
+label.trust-device {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.6rem;
+  color: var(--fg-2);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+label.trust-device input[type="checkbox"] {
+  margin-top: 0.2rem;
+  width: auto;
+}
+label.trust-device select {
+  display: inline-block;
+  width: auto;
+  padding: 0.1rem 0.3rem;
+  font-size: 0.82rem;
+}
+.trusted-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+.trusted-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--line);
+}
+.trusted-ua {
+  font-size: 0.88rem;
+  word-break: break-word;
+}

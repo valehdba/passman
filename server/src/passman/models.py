@@ -116,3 +116,26 @@ class Session(Base, TimestampMixin):
     revoked_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
     user: Mapped[User] = relationship(back_populates="sessions")
+
+
+class TrustedDevice(Base, TimestampMixin):
+    """A browser the user chose to trust after a successful OTP step.
+
+    While unexpired, presenting its token at login skips the OTP prompt (the
+    password/auth_key is still required). Only the SHA-256 of the token is
+    stored; the raw 256-bit random value lives in the browser.
+    """
+
+    __tablename__ = "trusted_devices"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    expires_at: Mapped[datetime] = mapped_column(nullable=False)
+    last_used_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(String(255), nullable=True)

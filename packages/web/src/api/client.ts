@@ -37,6 +37,17 @@ export interface TokenPair {
   access_expires_in: number;
   refresh_expires_in: number;
   encrypted_symmetric_key: string;
+  /** Set only when the OTP step was completed with "Trust this device". */
+  device_token?: string | null;
+  device_token_expires_in?: number | null;
+}
+
+export interface TrustedDevice {
+  id: string;
+  user_agent: string | null;
+  created_at: string;
+  last_used_at: string | null;
+  expires_at: string;
 }
 
 /** `POST /sessions` returns this when the user has 2FA enabled — phase-1
@@ -107,17 +118,38 @@ export const api = {
   kdfLookup: (email: string) =>
     request<KdfLookup>(`/accounts/kdf?email=${encodeURIComponent(email)}`),
 
-  login: (email: string, authKey: string) =>
+  login: (email: string, authKey: string, deviceToken?: string | null) =>
     request<LoginResponse>("/sessions", {
       method: "POST",
-      body: JSON.stringify({ email, auth_key: authKey }),
+      body: JSON.stringify({
+        email,
+        auth_key: authKey,
+        ...(deviceToken ? { device_token: deviceToken } : {}),
+      }),
     }),
 
-  loginOtp: (otpToken: string, code: string) =>
+  loginOtp: (
+    otpToken: string,
+    code: string,
+    trust?: { days: number } | null,
+  ) =>
     request<TokenPair>("/sessions/otp", {
       method: "POST",
-      body: JSON.stringify({ otp_token: otpToken, code }),
+      body: JSON.stringify({
+        otp_token: otpToken,
+        code,
+        ...(trust ? { trust_device: true, trust_days: trust.days } : {}),
+      }),
     }),
+
+  listTrustedDevices: (token: string) =>
+    request<TrustedDevice[]>("/account/trusted-devices", {}, token),
+
+  revokeTrustedDevice: (token: string, id: string) =>
+    request<void>(`/account/trusted-devices/${id}`, { method: "DELETE" }, token),
+
+  revokeAllTrustedDevices: (token: string) =>
+    request<void>("/account/trusted-devices", { method: "DELETE" }, token),
 
   totpStatus: (token: string) =>
     request<TotpStatus>("/account/totp/status", {}, token),

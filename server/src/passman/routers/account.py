@@ -17,19 +17,23 @@ so a stolen access token alone can't downgrade the auth posture.
 from __future__ import annotations
 
 import json
+import uuid
 from typing import cast
 
 from fastapi import APIRouter, status
+from sqlalchemy import delete, select
 
 from ..config import get_settings
 from ..deps import CurrentUserDep, SessionDep
 from ..errors import InvalidCredentialsError
+from ..models import TrustedDevice
 from ..schemas import (
     TotpConfirmRequest,
     TotpConfirmResponse,
     TotpDisableRequest,
     TotpSetupResponse,
     TotpStatusResponse,
+    TrustedDeviceOut,
 )
 from ..totp import (
     build_provisioning_uri,
@@ -39,6 +43,7 @@ from ..totp import (
     hash_recovery_codes,
     verify,
 )
+from ..trusted_devices import revoke_all
 
 router = APIRouter(prefix="/api/account", tags=["account"])
 
@@ -152,7 +157,39 @@ async def totp_disable(
     user.totp_secret = None
     user.totp_enabled = False
     user.totp_recovery_hashes = None
+    # Trust was granted under the old auth posture; drop it with 2FA.
+    await revoke_all(session, user.id)
     await session.flush()
+
+
+@router.get("/trusted-devices", response_model=list[TrustedDeviceOut])
+async def list_trusted_devices(user: CurrentUserDep, session: SessionDep) -> list[TrustedDevice]:
+    """Browsers currently allowed to skip the OTP prompt (most recent first)."""
+    rows = await session.execute(
+        select(TrustedDevice)
+        .where(TrustedDevice.user_id == user.id)
+        .order_by(TrustedDevice.created_at.desc())
+    )
+    return list(rows.scalars().all())
+
+
+@router.delete(
+    "/trusted-devices/{device_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
+)
+async def revoke_trusted_device(
+    device_id: uuid.UUID, user: CurrentUserDep, session: SessionDep
+) -> None:
+    # Scoped to the caller; unknown/foreign ids are a silent no-op (idempotent).
+    await session.execute(
+        delete(TrustedDevice).where(TrustedDevice.id == device_id, TrustedDevice.user_id == user.id)
+    )
+
+
+@router.delete("/trusted-devices", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+async def revoke_all_trusted_devices(user: CurrentUserDep, session: SessionDep) -> None:
+    await revoke_all(session, user.id)
 
 
 # Re-export so tests can import without round-tripping through this module.

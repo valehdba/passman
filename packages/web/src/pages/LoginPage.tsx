@@ -11,6 +11,7 @@ import {
 import { ApiError, api, isOtpChallenge, type TokenPair } from "../api/client.js";
 import { useBranding } from "../branding/index.js";
 import { useSession } from "../stores/session.js";
+import { clearTrustToken, getTrustToken, setTrustToken } from "../stores/trustedDevice.js";
 import { BrandHeader } from "./vault/BrandHeader.js";
 
 /**
@@ -44,6 +45,8 @@ export function LoginPage() {
     password: string;
   } | null>(null);
   const [otpCode, setOtpCode] = useState("");
+  const [trustDevice, setTrustDevice] = useState(false);
+  const [trustDays, setTrustDays] = useState(30);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,9 +61,13 @@ export function LoginPage() {
         parallelism: kdf.kdf_parallelism,
       };
       const authKey = await deriveLoginAuthKey(password, kdfParams);
-      const resp = await api.login(email, authKey);
+      const savedTrust = getTrustToken(email);
+      const resp = await api.login(email, authKey, savedTrust);
 
       if (isOtpChallenge(resp)) {
+        // The server did not honour our saved trust token (expired, revoked,
+        // 2FA reset…): forget it so we stop sending a dead token.
+        if (savedTrust) clearTrustToken(email);
         // Carry the master password forward — we still need it after OTP
         // verification to derive the vault symmetric key.
         setPending({ otpToken: resp.otp_token, kdfParams, password });
@@ -87,7 +94,14 @@ export function LoginPage() {
     setError(null);
     setBusy(true);
     try {
-      const tokens = await api.loginOtp(pending.otpToken, otpCode.trim());
+      const tokens = await api.loginOtp(
+        pending.otpToken,
+        otpCode.trim(),
+        trustDevice ? { days: trustDays } : null,
+      );
+      if (tokens.device_token && tokens.device_token_expires_in) {
+        setTrustToken(email, tokens.device_token, tokens.device_token_expires_in);
+      }
       await completeLogin(tokens, pending.kdfParams, pending.password);
     } catch (e) {
       setError(
@@ -118,6 +132,7 @@ export function LoginPage() {
     });
     setPending(null);
     setOtpCode("");
+    setTrustDevice(false);
     setPassword("");
     nav("/vault");
   }
@@ -145,6 +160,28 @@ export function LoginPage() {
               autoComplete="one-time-code"
               required
             />
+          </label>
+          <label className="trust-device">
+            <input
+              type="checkbox"
+              checked={trustDevice}
+              onChange={(e) => setTrustDevice(e.target.checked)}
+            />
+            <span>
+              Trust this device — don't ask for a code again on this browser for{" "}
+              <select
+                value={trustDays}
+                disabled={!trustDevice}
+                onChange={(e) => setTrustDays(Number(e.target.value))}
+                aria-label="Trust period"
+              >
+                <option value={1}>1 day</option>
+                <option value={7}>7 days</option>
+                <option value={30}>30 days</option>
+                <option value={90}>90 days</option>
+              </select>
+              . Only on a device you own; your master password is still required.
+            </span>
           </label>
           {error && <p className="error">{error}</p>}
           <button type="submit" disabled={busy || otpCode.trim().length < 4}>

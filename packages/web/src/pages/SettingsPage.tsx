@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { ApiError, api, type TotpStatus } from "../api/client.js";
+import { ApiError, api, type TotpStatus, type TrustedDevice } from "../api/client.js";
 import { useBranding } from "../branding/index.js";
 import { PROTOCOL_VALUES, usePreferences } from "../stores/preferences.js";
 import { useSession } from "../stores/session.js";
+import { clearAllTrustTokens } from "../stores/trustedDevice.js";
 import { TotpSetupFlow } from "./settings/TotpSetupFlow.js";
 import { BrandHeader } from "./vault/BrandHeader.js";
 
@@ -72,6 +73,8 @@ export function SettingsPage() {
           <TotpDisabledPanel onSetup={() => setSetupOpen(true)} />
         )}
       </section>
+
+      {status?.enabled && <TrustedDevicesSection />}
 
       <PreferencesSection />
 
@@ -339,6 +342,125 @@ function PreferencesSection() {
           Reset to defaults
         </button>
       </div>
+    </section>
+  );
+}
+
+/** "Chrome on macOS" from a raw User-Agent; falls back to the raw string. */
+function describeAgent(ua: string | null): string {
+  if (!ua) return "Unknown browser";
+  const browser =
+    /Edg\//.test(ua) ? "Edge"
+    : /OPR\//.test(ua) ? "Opera"
+    : /Firefox\//.test(ua) ? "Firefox"
+    : /Chrome\//.test(ua) ? "Chrome"
+    : /Safari\//.test(ua) ? "Safari"
+    : null;
+  const os =
+    /Windows/.test(ua) ? "Windows"
+    : /Android/.test(ua) ? "Android"
+    : /iPhone|iPad/.test(ua) ? "iOS"
+    : /Mac OS X/.test(ua) ? "macOS"
+    : /Linux/.test(ua) ? "Linux"
+    : null;
+  return browser && os ? `${browser} on ${os}` : (browser ?? os ?? ua.slice(0, 60));
+}
+
+function fmtDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function TrustedDevicesSection() {
+  const accessToken = useSession((s) => s.accessToken);
+  const [devices, setDevices] = useState<TrustedDevice[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function load() {
+    if (!accessToken) return;
+    try {
+      setDevices(await api.listTrustedDevices(accessToken));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load trusted devices");
+    }
+  }
+
+  useEffect(() => {
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken]);
+
+  async function revoke(id: string) {
+    if (!accessToken) return;
+    setError(null);
+    try {
+      await api.revokeTrustedDevice(accessToken, id);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Revoke failed");
+    }
+  }
+
+  async function revokeAll() {
+    if (!accessToken) return;
+    setError(null);
+    try {
+      await api.revokeAllTrustedDevices(accessToken);
+      clearAllTrustTokens();
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Revoke failed");
+    }
+  }
+
+  return (
+    <section className="settings-section">
+      <header>
+        <h2>Trusted devices</h2>
+        <p className="settings-section-hint">
+          Browsers where you chose "Trust this device" at login skip the
+          authenticator code until the date shown. Your master password is
+          still required. Revoke any you don't recognise or no longer use.
+          Turning 2FA off removes them all.
+        </p>
+      </header>
+
+      {error && <p className="error">{error}</p>}
+
+      {devices === null ? (
+        <p className="settings-loading">Loading…</p>
+      ) : devices.length === 0 ? (
+        <p className="settings-loading">No trusted devices.</p>
+      ) : (
+        <>
+          <ul className="trusted-list">
+            {devices.map((d) => (
+              <li key={d.id}>
+                <span>
+                  <span className="trusted-ua">{describeAgent(d.user_agent)}</span>
+                  <span className="settings-status-meta" style={{ display: "block" }}>
+                    Trusted {fmtDate(d.created_at)}
+                    {d.last_used_at ? ` · last used ${fmtDate(d.last_used_at)}` : ""} ·
+                    expires {fmtDate(d.expires_at)}
+                  </span>
+                </span>
+                <button type="button" className="btn" onClick={() => void revoke(d.id)}>
+                  Revoke
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="settings-row">
+            <span />
+            <button type="button" className="btn" onClick={() => void revokeAll()}>
+              Revoke all
+            </button>
+          </div>
+        </>
+      )}
     </section>
   );
 }
