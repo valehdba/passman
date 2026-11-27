@@ -1438,13 +1438,32 @@ main.settings-container {
   font-weight: 500;
   font-size: 0.92rem;
 }
+/* The global `label` rule is a column; settings rows are label-left / control-right. */
+label.settings-row {
+  flex-direction: row;
+  gap: 1rem;
+  font-size: inherit;
+  color: inherit;
+}
+.settings-row > span:first-child {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
 .settings-label {
   display: block;
+  color: var(--fg);
   font-weight: 500;
   font-size: 0.92rem;
 }
 .settings-row select {
   min-width: 9.5rem;
+}
+.settings-count {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--fg-2);
+  white-space: nowrap;
 }
 .settings-status-meta {
   color: var(--muted);

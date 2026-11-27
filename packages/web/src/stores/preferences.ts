@@ -31,12 +31,15 @@ export interface Preferences {
   clipboardClearSeconds: number;
   /** Protocol pre-selected in the New credential form. "" = none. */
   defaultProtocol: Protocol | "";
+  /** Where new credentials are stored unless overridden in the form. */
+  defaultStorage: "server" | "local";
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
   autoLockMinutes: 15,
   clipboardClearSeconds: 30,
   defaultProtocol: "",
+  defaultStorage: "server",
 };
 
 function clampInt(v: unknown, min: number, max: number, fallback: number): number {
@@ -65,6 +68,7 @@ export function sanitizePreferences(raw: unknown): Preferences {
       typeof proto === "string" && (PROTOCOL_VALUES as readonly string[]).includes(proto)
         ? (proto as Protocol)
         : "",
+    defaultStorage: r.defaultStorage === "local" ? "local" : "server",
   };
 }
 
@@ -108,6 +112,7 @@ export const usePreferences = create<PreferencesState>((set, get) => ({
 
 /** Non-reactive read for plain modules (e.g. the clipboard helper). */
 export function getPreferences(): Preferences {
-  const { autoLockMinutes, clipboardClearSeconds, defaultProtocol } = usePreferences.getState();
-  return { autoLockMinutes, clipboardClearSeconds, defaultProtocol };
+  const { autoLockMinutes, clipboardClearSeconds, defaultProtocol, defaultStorage } =
+    usePreferences.getState();
+  return { autoLockMinutes, clipboardClearSeconds, defaultProtocol, defaultStorage };
 }

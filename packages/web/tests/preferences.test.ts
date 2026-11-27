@@ -11,8 +11,13 @@ describe("sanitizePreferences", () => {
 
   it("keeps valid values", () => {
     expect(
-      sanitizePreferences({ autoLockMinutes: 5, clipboardClearSeconds: 0, defaultProtocol: "psql" }),
-    ).toEqual({ autoLockMinutes: 5, clipboardClearSeconds: 0, defaultProtocol: "psql" });
+      sanitizePreferences({ autoLockMinutes: 5, clipboardClearSeconds: 0, defaultProtocol: "psql", defaultStorage: "local" }),
+    ).toEqual({
+      autoLockMinutes: 5,
+      clipboardClearSeconds: 0,
+      defaultProtocol: "psql",
+      defaultStorage: "local",
+    });
   });
 
   it("clamps out-of-range numbers and rejects non-numbers", () => {
@@ -25,6 +30,12 @@ describe("sanitizePreferences", () => {
     expect(sanitizePreferences({ autoLockMinutes: NaN }).autoLockMinutes).toBe(
       DEFAULT_PREFERENCES.autoLockMinutes,
     );
+  });
+
+  it("accepts only server or local for defaultStorage", () => {
+    expect(sanitizePreferences({ defaultStorage: "local" }).defaultStorage).toBe("local");
+    expect(sanitizePreferences({ defaultStorage: "cloud" }).defaultStorage).toBe("server");
+    expect(sanitizePreferences({}).defaultStorage).toBe("server");
   });
 
   it("rejects unknown protocols", () => {

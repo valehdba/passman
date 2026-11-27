@@ -97,7 +97,9 @@ export function AddCredentialForm({ initial, onSubmit, onCancel }: Props) {
   const [draft, setDraft] = useState<DraftState>(
     initial ? draftFromPlaintext(initial.plaintext) : freshDraft(),
   );
-  const [storeLocally, setStoreLocally] = useState(false);
+  const [storeLocally, setStoreLocally] = useState(
+    () => usePreferences.getState().defaultStorage === "local",
+  );
   const [genOpen, setGenOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -153,7 +155,7 @@ export function AddCredentialForm({ initial, onSubmit, onCancel }: Props) {
       await onSubmit(cleaned, location);
       if (!isEdit) {
         setDraft(freshDraft());
-        setStoreLocally(false);
+        setStoreLocally(usePreferences.getState().defaultStorage === "local");
       }
     } catch (e) {
       setErr(
