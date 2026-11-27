@@ -51,6 +51,11 @@ class Settings(BaseSettings):
     client_argon2_memory_cost: int = 65_536  # 64 MiB
     client_argon2_parallelism: int = 4
 
+    # --- Trusted devices ("skip OTP on this device") ---
+    trusted_device_default_days: int = 30
+    trusted_device_max_days: int = 90  # server-side cap on what a client may request
+    trusted_device_max_per_user: int = 10  # oldest trust is evicted beyond this
+
     # --- CORS ---
     cors_origins: list[str] = Field(
         default_factory=lambda: ["http://localhost:5173", "chrome-extension://*"]

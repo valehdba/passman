@@ -36,6 +36,7 @@ from ..schemas import (
 )
 from ..totp import consume_recovery_code
 from ..totp import verify as verify_totp
+from ..trusted_devices import create_trusted_device, is_trusted
 
 logger = logging.getLogger(__name__)
 
@@ -118,8 +119,10 @@ async def login(
             # convert a legitimate login into a 5xx.
             logger.warning("auth_hash rehash failed for user_id=%s", user.id, exc_info=True)
 
-    # 2FA gate — if enabled, hand back an OTP challenge token and stop.
-    if user.totp_enabled:
+    # 2FA gate — if enabled, hand back an OTP challenge token and stop,
+    # unless this browser presented a live "trusted device" token (the
+    # password was already verified above; only the OTP step is skipped).
+    if user.totp_enabled and not await is_trusted(session, user.id, payload.device_token):
         otp_token, otp_ttl = create_otp_challenge_token(str(user.id))
         return OtpChallengeResponse(otp_token=otp_token, otp_expires_in=otp_ttl)
 
@@ -179,7 +182,12 @@ async def login_otp(
     if not accepted:
         raise InvalidCredentialsError("Invalid OTP code")
 
-    return await _issue_token_pair(user, session, user_agent)
+    pair = await _issue_token_pair(user, session, user_agent)
+    if payload.trust_device:
+        raw, ttl = await create_trusted_device(session, user.id, payload.trust_days, user_agent)
+        pair.device_token = raw
+        pair.device_token_expires_in = ttl
+    return pair
 
 
 @router.post("/refresh", response_model=RefreshResponse)

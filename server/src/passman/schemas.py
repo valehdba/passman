@@ -84,6 +84,9 @@ class KdfLookupResponse(KdfParams):
 class LoginRequest(BaseModel):
     email: NormalizedEmail
     auth_key: str = Field(min_length=32, max_length=512)
+    # Token from a previous "trust this device" OTP step. Optional; an
+    # invalid/expired/foreign token is ignored and the normal OTP flow runs.
+    device_token: str | None = Field(default=None, min_length=16, max_length=128)
 
 
 class TokenPair(BaseModel):
@@ -93,6 +96,9 @@ class TokenPair(BaseModel):
     access_expires_in: int
     refresh_expires_in: int
     encrypted_symmetric_key: str
+    # Present only when the OTP step was completed with "trust this device".
+    device_token: str | None = None
+    device_token_expires_in: int | None = None
 
 
 class OtpChallengeResponse(BaseModel):
@@ -113,6 +119,10 @@ class OtpLoginRequest(BaseModel):
     # Allow both 6-digit codes and recovery codes (length up to 9 with the
     # `xxxx-xxxx` formatting). Pydantic v2 lets us narrow further at runtime.
     code: str = Field(min_length=4, max_length=32)
+    # Remember this browser so the OTP prompt is skipped until it expires.
+    trust_device: bool = False
+    # Requested trust period; clamped server-side to TRUSTED_DEVICE_MAX_DAYS.
+    trust_days: int | None = Field(default=None, ge=1, le=365)
 
 
 # -- TOTP / 2FA management (all require an authenticated session) ---------
@@ -191,3 +201,13 @@ class VaultListResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     detail: str
+
+
+class TrustedDeviceOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    user_agent: str | None
+    created_at: datetime
+    last_used_at: datetime | None
+    expires_at: datetime
